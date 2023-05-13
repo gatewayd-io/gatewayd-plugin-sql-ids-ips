@@ -2,11 +2,13 @@ package plugin
 
 import (
 	"context"
-	"encoding/base64"
 
+	"github.com/gatewayd-io/gatewayd-plugin-sdk/databases/postgres"
+	sdkPlugin "github.com/gatewayd-io/gatewayd-plugin-sdk/plugin"
 	v1 "github.com/gatewayd-io/gatewayd-plugin-sdk/plugin/v1"
 	"github.com/hashicorp/go-hclog"
 	goplugin "github.com/hashicorp/go-plugin"
+	"github.com/spf13/cast"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/structpb"
 )
@@ -57,25 +59,13 @@ func (p *Plugin) GetPluginConfig(
 func (p *Plugin) OnTrafficFromClient(
 	ctx context.Context, req *structpb.Struct) (*structpb.Struct, error) {
 	OnTrafficFromClient.Inc()
-	// Example req:
-	// {
-	//     "client": {
-	//         "local": "0.0.0.0:15432",
-	//         "remote": "127.0.0.1:45612"
-	//     },
-	//     "error": "",
-	//     "query": "eyJUeXBlIjoiUXVlcnkiLCJTdHJpbmciOiJzZWxlY3QgMTsifQ==",
-	//     "request": "UQAAAA5zZWxlY3QgMTsA",
-	//     "server": {
-	//         "local": "127.0.0.1:60386",
-	//         "remote": "127.0.0.1:5432"
-	//     }
-	// }
-	p.Logger.Debug("OnTrafficFromClient", "req", req)
+	req, err := postgres.HandleClientMessage(req, p.Logger)
+	if err != nil {
+		p.Logger.Info("Failed to handle client message", "error", err)
+	}
 
-	request := req.Fields["request"].GetStringValue()
-	if reqBytes, err := base64.StdEncoding.DecodeString(request); err == nil {
-		p.Logger.Debug("OnTrafficFromClient", "request", string(reqBytes))
+	if query := cast.ToString(sdkPlugin.GetAttr(req, "query", "")); query == "" {
+		// TODO: Check if the SQL query is not an injection
 	}
 
 	return req, nil
