@@ -1,4 +1,4 @@
-module github.com/gatewayd-io/plugin-template-go
+module github.com/gatewayd-io/gatewayd-plugin-sql-idp
 
 go 1.20
 

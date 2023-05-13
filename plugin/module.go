@@ -7,12 +7,12 @@ import (
 
 var (
 	PluginID = v1.PluginID{
-		Name:      "plugin-template-go",
+		Name:      "gatewayd-plugin-sql-idp",
 		Version:   "0.0.1",
-		RemoteUrl: "github.com/gatewayd-io/plugin-template-go",
+		RemoteUrl: "github.com/gatewayd-io/gatewayd-plugin-sql-idp",
 	}
 	PluginMap = map[string]goplugin.Plugin{
-		"plugin-template-go": &TemplatePlugin{},
+		"gatewayd-plugin-sql-idp": &TemplatePlugin{},
 	}
 	// TODO: Handle this in a better way
 	// https://github.com/gatewayd-io/gatewayd-plugin-sdk/issues/3
@@ -27,11 +27,11 @@ var (
 			"Mostafa Moradian <mostafa@gatewayd.io>",
 		},
 		"license":    "Apache 2.0",
-		"projectUrl": "https://github.com/gatewayd-io/plugin-template-go",
+		"projectUrl": "https://github.com/gatewayd-io/gatewayd-plugin-sql-idp",
 		// Compile-time configuration
 		"config": map[string]interface{}{
 			"metricsEnabled":          "true",
-			"metricsUnixDomainSocket": "/tmp/plugin-template-go.sock",
+			"metricsUnixDomainSocket": "/tmp/gatewayd-plugin-sql-idp.sock",
 			"metricsEndpoint":         "/metrics",
 		},
 		// "requires": []interface{}{
