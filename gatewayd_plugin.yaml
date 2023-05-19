@@ -26,5 +26,14 @@ plugins:
       # The below environment variables are used by the plugin loader to verify the plugin's identity.
       - MAGIC_COOKIE_KEY=GATEWAYD_PLUGIN
       - MAGIC_COOKIE_VALUE=5712b87aa5d7e9f9e9ab643e6603181c5b796015cb1c09d6f5ada882bf2a1872
+      - METRICS_ENABLED=True
+      - METRICS_UNIX_DOMAIN_SOCKET=/tmp/gatewayd-plugin-cache.sock
+      - METRICS_PATH=/metrics
+      # Threshold determine the minimum prediction confidence
+      # required to detect an SQL injection attack. Any value
+      # between 0 and 1 is valid, and it is inclusive.
+      # Anything below 0.8 is not recommended,
+      # but it is dependent on the application and testing.
+      - THRESHOLD=0.8
     # Checksum hash to verify the binary before loading
     checksum: dee4aa014a722e1865d91744a4fd310772152467d9c6ab4ba17fd9dd40d3f724
