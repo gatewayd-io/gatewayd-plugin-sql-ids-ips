@@ -28,6 +28,7 @@ func main() {
 		Color:      hclog.ColorOff,
 	})
 
+	// Load the model from the file system
 	model, err := tf.LoadSavedModel("sqli_model", []string{"serve"}, nil)
 	if err != nil {
 		logger.Error("Failed to load model", "error", err)
