@@ -175,9 +175,17 @@ func (p *Plugin) OnTrafficFromClient(
 			Detail:   "Back off, you're not welcome here.",
 		}
 
+		// Create a ready for query response.
+		readyForQuery := &pgproto3.ReadyForQuery{TxStatus: 'I'}
+
+		// Create a buffer to write the response to.
+		buf := errResp.Encode(nil)
+		// TODO: Decide whether to terminate the connection.
+		buf = readyForQuery.Encode(buf)
+
 		return structpb.NewStruct(map[string]interface{}{
 			"terminate": true,
-			"response":  errResp.Encode(nil),
+			"response":  buf,
 		})
 	}
 
