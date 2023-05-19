@@ -69,7 +69,7 @@ func (p *Plugin) OnTrafficFromClient(
 	OnTrafficFromClient.Inc()
 	req, err := postgres.HandleClientMessage(req, p.Logger)
 	if err != nil {
-		p.Logger.Info("Failed to handle client message", "error", err)
+		p.Logger.Debug("Failed to handle client message", "error", err)
 	}
 
 	// Get the client request from the GatewayD request.
@@ -84,14 +84,14 @@ func (p *Plugin) OnTrafficFromClient(
 		p.Logger.Debug("Failed to get query from request, possibly not a SQL query request")
 		return req, nil
 	}
-	p.Logger.Info("Query", "query", query)
+	p.Logger.Trace("Query", "query", query)
 
 	// Decode the query.
 	decodedQuery, err := base64.StdEncoding.DecodeString(query)
 	if err != nil {
 		return req, err
 	}
-	p.Logger.Info("Decoded Query", "decodedQuery", decodedQuery)
+	p.Logger.Trace("Decoded Query", "decodedQuery", decodedQuery)
 
 	// Unmarshal query into a map.
 	var queryMap map[string]interface{}
@@ -135,7 +135,7 @@ func (p *Plugin) OnTrafficFromClient(
 	allTokens := make([][]float32, 1)
 	allTokens[0] = tokens
 
-	p.Logger.Info("Tokens", "tokens", allTokens)
+	p.Logger.Trace("Tokens", "tokens", allTokens)
 
 	inputTensor, err := tf.NewTensor(allTokens)
 	if err != nil {
@@ -143,12 +143,12 @@ func (p *Plugin) OnTrafficFromClient(
 		return req, nil
 	}
 
-	output, err := model.Session.Run(
+	output, err := p.Model.Session.Run(
 		map[tf.Output]*tf.Tensor{
-			model.Graph.Operation("serving_default_embedding_input").Output(0): inputTensor,
+			p.Model.Graph.Operation("serving_default_embedding_input").Output(0): inputTensor,
 		},
 		[]tf.Output{
-			model.Graph.Operation("StatefulPartitionedCall").Output(0),
+			p.Model.Graph.Operation("StatefulPartitionedCall").Output(0),
 		},
 		nil,
 	)
@@ -159,9 +159,9 @@ func (p *Plugin) OnTrafficFromClient(
 
 	predictions := output[0].Value().([][]float32)
 	// Define the threshold for the prediction.
-	p.Logger.Info("Prediction", "prediction", predictions[0][0])
-	if predictions[0][0] > 0.8 {
-		p.Logger.Info("SQL Injection Detected", "prediction", predictions[0][0])
+	p.Logger.Debug("Prediction", "prediction", predictions[0][0])
+	if predictions[0][0] >= p.Threshold {
+		p.Logger.Warn("SQL Injection Detected", "prediction", predictions[0][0])
 
 		// Create a PostgreSQL error response.
 		errResp := &pgproto3.ErrorResponse{
