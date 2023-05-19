@@ -22,7 +22,9 @@ import (
 type Plugin struct {
 	goplugin.GRPCPlugin
 	v1.GatewayDPluginServiceServer
-	Logger hclog.Logger
+	Logger    hclog.Logger
+	Model     *tf.SavedModel
+	Threshold float32
 }
 
 type TemplatePlugin struct {
@@ -97,13 +99,6 @@ func (p *Plugin) OnTrafficFromClient(
 		p.Logger.Error("Failed to unmarshal query", "error", err)
 		return req, nil
 	}
-
-	model, err := tf.LoadSavedModel("sqli_model", []string{"serve"}, nil)
-	if err != nil {
-		p.Logger.Error("Failed to load model", "error", err)
-		return req, nil
-	}
-	defer model.Session.Close()
 
 	// Create the JSON body from the map.
 	body, err := json.Marshal(map[string]interface{}{

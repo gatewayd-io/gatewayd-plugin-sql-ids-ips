@@ -4,6 +4,7 @@ import (
 	"flag"
 	"os"
 
+	tf "github.com/galeone/tensorflow/tensorflow/go"
 	sdkConfig "github.com/gatewayd-io/gatewayd-plugin-sdk/config"
 	"github.com/gatewayd-io/gatewayd-plugin-sdk/logging"
 	"github.com/gatewayd-io/gatewayd-plugin-sdk/metrics"
@@ -12,6 +13,7 @@ import (
 	"github.com/gatewayd-io/gatewayd-plugin-sql-idp/plugin"
 	"github.com/hashicorp/go-hclog"
 	goplugin "github.com/hashicorp/go-plugin"
+	"github.com/spf13/cast"
 )
 
 func main() {
@@ -26,16 +28,25 @@ func main() {
 		Color:      hclog.ColorOff,
 	})
 
+	model, err := tf.LoadSavedModel("sqli_model", []string{"serve"}, nil)
+	if err != nil {
+		logger.Error("Failed to load model", "error", err)
+	}
+	defer model.Session.Close()
+
 	pluginInstance := plugin.NewTemplatePlugin(plugin.Plugin{
 		Logger: logger,
+		Model:  model,
 	})
 
-	var config *metrics.MetricsConfig
-	if cfg, ok := plugin.PluginConfig["config"].(map[string]interface{}); ok {
-		config = metrics.NewMetricsConfig(cfg)
-	}
-	if config != nil && config.Enabled {
-		go metrics.ExposeMetrics(config, logger)
+	var metricsConfig *metrics.MetricsConfig
+	if cfg := cast.ToStringMap(plugin.PluginConfig["config"]); cfg != nil {
+		metricsConfig = metrics.NewMetricsConfig(cfg)
+		if metricsConfig != nil && metricsConfig.Enabled {
+			go metrics.ExposeMetrics(metricsConfig, logger)
+		}
+
+		pluginInstance.Impl.Threshold = cast.ToFloat32(cfg["threshold"])
 	}
 
 	goplugin.Serve(&goplugin.ServeConfig{

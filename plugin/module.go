@@ -1,6 +1,7 @@
 package plugin
 
 import (
+	sdkConfig "github.com/gatewayd-io/gatewayd-plugin-sdk/config"
 	v1 "github.com/gatewayd-io/gatewayd-plugin-sdk/plugin/v1"
 	goplugin "github.com/hashicorp/go-plugin"
 )
@@ -30,9 +31,11 @@ var (
 		"projectUrl": "https://github.com/gatewayd-io/gatewayd-plugin-sql-idp",
 		// Compile-time configuration
 		"config": map[string]interface{}{
-			"metricsEnabled":          "true",
-			"metricsUnixDomainSocket": "/tmp/gatewayd-plugin-sql-idp.sock",
-			"metricsEndpoint":         "/metrics",
+			"metricsEnabled": sdkConfig.GetEnv("METRICS_ENABLED", "true"),
+			"metricsUnixDomainSocket": sdkConfig.GetEnv(
+				"METRICS_UNIX_DOMAIN_SOCKET", "/tmp/gatewayd-plugin-sql-idp.sock"),
+			"metricsEndpoint": sdkConfig.GetEnv("METRICS_ENDPOINT", "/metrics"),
+			"threshold":       sdkConfig.GetEnv("THRESHOLD", "0.8"),
 		},
 		"hooks": []interface{}{
 			// Converting HookName to int32 is required because the plugin
