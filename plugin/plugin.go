@@ -3,6 +3,7 @@ package plugin
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"net/http"
 
@@ -69,17 +70,33 @@ func (p *Plugin) OnTrafficFromClient(
 		p.Logger.Info("Failed to handle client message", "error", err)
 	}
 
+	// Get the client request from the GatewayD request.
 	request := cast.ToString(sdkPlugin.GetAttr(req, "request", ""))
 	if request == "" {
 		return req, nil
 	}
 
-	query, err := postgres.GetQueryFromRequest(request)
-	if err != nil {
-		p.Logger.Error("Failed to get query from request", "error", err)
+	// Get the query from the request.
+	query := cast.ToString(sdkPlugin.GetAttr(req, "query", ""))
+	if query == "" {
+		p.Logger.Debug("Failed to get query from request, possibly not a SQL query request")
 		return req, nil
 	}
 	p.Logger.Info("Query", "query", query)
+
+	// Decode the query.
+	decodedQuery, err := base64.StdEncoding.DecodeString(query)
+	if err != nil {
+		return req, err
+	}
+	p.Logger.Info("Decoded Query", "decodedQuery", decodedQuery)
+
+	// Unmarshal query into a map.
+	var queryMap map[string]interface{}
+	if err := json.Unmarshal(decodedQuery, &queryMap); err != nil {
+		p.Logger.Error("Failed to unmarshal query", "error", err)
+		return req, nil
+	}
 
 	model, err := tf.LoadSavedModel("sqli_model", []string{"serve"}, nil)
 	if err != nil {
@@ -90,7 +107,7 @@ func (p *Plugin) OnTrafficFromClient(
 
 	// Create the JSON body from the map.
 	body, err := json.Marshal(map[string]interface{}{
-		"query": query,
+		"query": queryMap["String"],
 	})
 	if err != nil {
 		p.Logger.Error("Failed to marshal query", "error", err)
