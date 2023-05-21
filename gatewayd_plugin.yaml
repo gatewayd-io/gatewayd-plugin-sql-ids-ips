@@ -35,5 +35,6 @@ plugins:
       # Anything below 0.8 is not recommended,
       # but it is dependent on the application and testing.
       - THRESHOLD=0.8
+      - MODEL_PATH=sqli_model
     # Checksum hash to verify the binary before loading
     checksum: dee4aa014a722e1865d91744a4fd310772152467d9c6ab4ba17fd9dd40d3f724

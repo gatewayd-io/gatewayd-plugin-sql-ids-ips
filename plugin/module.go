@@ -36,6 +36,7 @@ var (
 				"METRICS_UNIX_DOMAIN_SOCKET", "/tmp/gatewayd-plugin-sql-idp.sock"),
 			"metricsEndpoint": sdkConfig.GetEnv("METRICS_ENDPOINT", "/metrics"),
 			"threshold":       sdkConfig.GetEnv("THRESHOLD", "0.8"),
+			"modelPath":       sdkConfig.GetEnv("MODEL_PATH", "sqli_model"),
 		},
 		"hooks": []interface{}{
 			// Converting HookName to int32 is required because the plugin

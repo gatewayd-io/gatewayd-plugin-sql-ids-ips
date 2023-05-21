@@ -28,16 +28,8 @@ func main() {
 		Color:      hclog.ColorOff,
 	})
 
-	// Load the model from the file system
-	model, err := tf.LoadSavedModel("sqli_model", []string{"serve"}, nil)
-	if err != nil {
-		logger.Error("Failed to load model", "error", err)
-	}
-	defer model.Session.Close()
-
 	pluginInstance := plugin.NewTemplatePlugin(plugin.Plugin{
 		Logger: logger,
-		Model:  model,
 	})
 
 	var metricsConfig *metrics.MetricsConfig
@@ -48,6 +40,17 @@ func main() {
 		}
 
 		pluginInstance.Impl.Threshold = cast.ToFloat32(cfg["threshold"])
+
+		modelPath := cast.ToString(cfg["modelPath"])
+		// Load the model from the file system
+		model, err := tf.LoadSavedModel(modelPath, []string{"serve"}, nil)
+		if err != nil {
+			logger.Error("Failed to load model", "error", err)
+			panic(err)
+		}
+		defer model.Session.Close()
+
+		pluginInstance.Impl.Model = model
 	}
 
 	goplugin.Serve(&goplugin.ServeConfig{
