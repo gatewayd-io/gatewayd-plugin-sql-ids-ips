@@ -1,10 +1,10 @@
 package plugin
 
 import (
-	"bytes"
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	tf "github.com/galeone/tensorflow/tensorflow/go"
@@ -100,20 +100,11 @@ func (p *Plugin) OnTrafficFromClient(
 		return req, nil
 	}
 
-	// Create the JSON body from the map.
-	body, err := json.Marshal(map[string]interface{}{
-		"query": queryMap["String"],
-	})
+	// Make an HTTP GET request to the tokenize service.
+	resp, err := http.Get(
+		fmt.Sprintf("http://localhost:5000/tokenize_and_sequence/%s", queryMap["String"]))
 	if err != nil {
-		p.Logger.Error("Failed to marshal query", "error", err)
-		return req, nil
-	}
-
-	// Make an HTTP POST request to the tokenize service.
-	resp, err := http.Post(
-		"http://localhost:5000/tokenize_and_sequence", "application/json", bytes.NewBuffer(body))
-	if err != nil {
-		p.Logger.Error("Failed to make POST request", "error", err)
+		p.Logger.Error("Failed to make GET request", "error", err)
 		return req, nil
 	}
 
@@ -174,14 +165,15 @@ func (p *Plugin) OnTrafficFromClient(
 		readyForQuery := &pgproto3.ReadyForQuery{TxStatus: 'I'}
 
 		// Create a buffer to write the response to.
-		buf := errResp.Encode(nil)
+		response := errResp.Encode(nil)
 		// TODO: Decide whether to terminate the connection.
-		buf = readyForQuery.Encode(buf)
+		response = readyForQuery.Encode(response)
 
-		return structpb.NewStruct(map[string]interface{}{
-			"terminate": true,
-			"response":  buf,
-		})
+		// Create a response to send back to the client.
+		req.Fields["response"] = structpb.NewStringValue(
+			base64.StdEncoding.EncodeToString(response))
+		req.Fields["terminate"] = structpb.NewBoolValue(true)
+		return req, nil
 	}
 
 	return req, nil
