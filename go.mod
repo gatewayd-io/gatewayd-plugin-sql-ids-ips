@@ -3,6 +3,7 @@ module github.com/gatewayd-io/gatewayd-plugin-sql-idp
 go 1.20
 
 require (
+	github.com/corazawaf/libinjection-go v0.1.2
 	github.com/galeone/tensorflow/tensorflow/go v0.0.0-20221023090153-6b7fa0680c3e
 	github.com/gatewayd-io/gatewayd-plugin-sdk v0.0.21
 	github.com/hashicorp/go-hclog v1.5.0
