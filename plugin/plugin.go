@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/corazawaf/libinjection-go"
 	tf "github.com/galeone/tensorflow/tensorflow/go"
 	"github.com/gatewayd-io/gatewayd-plugin-sdk/databases/postgres"
 	sdkPlugin "github.com/gatewayd-io/gatewayd-plugin-sdk/plugin"
@@ -67,6 +68,7 @@ func (p *Plugin) GetPluginConfig(
 func (p *Plugin) OnTrafficFromClient(
 	ctx context.Context, req *structpb.Struct) (*structpb.Struct, error) {
 	OnTrafficFromClient.Inc()
+	// Handle the client message.
 	req, err := postgres.HandleClientMessage(req, p.Logger)
 	if err != nil {
 		p.Logger.Debug("Failed to handle client message", "error", err)
@@ -117,6 +119,7 @@ func (p *Plugin) OnTrafficFromClient(
 
 	}
 
+	// Get the tokens from the response.
 	var tokens []float32
 	for _, v := range data["tokens"].([]interface{}) {
 		tokens = append(tokens, cast.ToFloat32(v))
@@ -128,12 +131,14 @@ func (p *Plugin) OnTrafficFromClient(
 
 	p.Logger.Trace("Tokens", "tokens", allTokens)
 
+	// Create a tensor from the tokens.
 	inputTensor, err := tf.NewTensor(allTokens)
 	if err != nil {
 		p.Logger.Error("Failed to create input tensor", "error", err)
 		return req, nil
 	}
 
+	// Run the model to predict if the query is malicious or not.
 	output, err := p.Model.Session.Run(
 		map[tf.Output]*tf.Tensor{
 			p.Model.Graph.Operation("serving_default_embedding_input").Output(0): inputTensor,
@@ -147,12 +152,21 @@ func (p *Plugin) OnTrafficFromClient(
 		p.Logger.Error("Failed to run model", "error", err)
 		return req, nil
 	}
-
 	predictions := output[0].Value().([][]float32)
-	// Define the threshold for the prediction.
-	p.Logger.Debug("Prediction", "prediction", predictions[0][0])
-	if predictions[0][0] >= p.Threshold {
-		p.Logger.Warn("SQL Injection Detected", "prediction", predictions[0][0])
+	p.Logger.Trace("Prediction", "prediction", predictions[0][0])
+
+	// Check if the query is an SQL injection using libinjection.
+	injection, _ := libinjection.IsSQLi(query)
+	p.Logger.Trace("SQLInjection", "is_injection", cast.ToString(injection))
+
+	// Check the prediction against the threshold,
+	// otherwise check if the query is an SQL injection using libinjection.
+	if predictions[0][0] >= p.Threshold || injection {
+		Detections.Inc()
+		p.Logger.Warn(
+			"SQL Injection Detected",
+			"prediction", predictions[0][0],
+			"isSQLi", cast.ToString(injection))
 
 		// Create a PostgreSQL error response.
 		errResp := &pgproto3.ErrorResponse{
