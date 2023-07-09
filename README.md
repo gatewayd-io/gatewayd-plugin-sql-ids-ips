@@ -1,6 +1,12 @@
-# gatewayd-plugin-sql-idp
-
-GatewayD plugin for SQL injection detection and prevention.
+<p align="center">
+  <!-- <a href="https://gatewayd.io/docs/plugins/gatewayd-plugin-sql-idp"> -->
+    <picture>
+      <img alt="gatewayd-plugin-sql-idp-logo" src="https://github.com/gatewayd-io/gatewayd-plugin-sql-idp/blob/main/assets/gatewayd-plugin-sql-idp-logo.png" width="96" />
+    </picture>
+  <!-- </a> -->
+  <h3 align="center">gatewayd-plugin-sql-idp</h3>
+  <p align="center">GatewayD plugin for SQL injection detection and prevention.</p>
+</p>
 
 ## Features
 
