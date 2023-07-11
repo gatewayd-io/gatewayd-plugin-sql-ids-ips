@@ -101,12 +101,52 @@ func (p *Plugin) OnTrafficFromClient(
 		p.Logger.Error("Failed to unmarshal query", "error", err)
 		return req, nil
 	}
+	queryString := cast.ToString(queryMap["String"])
+
+	isSQLi := func(query string) bool {
+		// Check if the query is an SQL injection using libinjection.
+		injection, _ := libinjection.IsSQLi(query)
+		if injection {
+			Detections.Inc()
+			p.Logger.Warn("SQL injection detected by libinjection")
+		}
+		p.Logger.Trace("SQLInjection", "is_injection", cast.ToString(injection))
+		return injection
+	}
+
+	errorResponse := func() *structpb.Struct {
+		// Create a PostgreSQL error response.
+		errResp := &pgproto3.ErrorResponse{
+			Severity: "EXCEPTION",
+			Message:  "SQL injection detected",
+			Detail:   "Back off, you're not welcome here.",
+			Code:     "42000",
+		}
+
+		// Create a ready for query response.
+		readyForQuery := &pgproto3.ReadyForQuery{TxStatus: 'I'}
+
+		// Create a buffer to write the response to.
+		response := errResp.Encode(nil)
+		// TODO: Decide whether to terminate the connection.
+		response = readyForQuery.Encode(response)
+
+		// Create a response to send back to the client.
+		req.Fields["response"] = structpb.NewStringValue(
+			base64.StdEncoding.EncodeToString(response))
+		req.Fields["terminate"] = structpb.NewBoolValue(true)
+
+		return req
+	}
 
 	// Make an HTTP GET request to the tokenize service.
 	resp, err := http.Get(
-		fmt.Sprintf("http://localhost:5000/tokenize_and_sequence/%s", queryMap["String"]))
+		fmt.Sprintf("http://localhost:5000/tokenize_and_sequence/%s", queryString))
 	if err != nil {
 		p.Logger.Error("Failed to make GET request", "error", err)
+		if isSQLi(queryString) {
+			return errorResponse(), nil
+		}
 		return req, nil
 	}
 
@@ -115,8 +155,10 @@ func (p *Plugin) OnTrafficFromClient(
 	var data map[string]interface{}
 	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
 		p.Logger.Error("Failed to decode response body", "error", err)
+		if isSQLi(queryString) {
+			return errorResponse(), nil
+		}
 		return req, nil
-
 	}
 
 	// Get the tokens from the response.
@@ -135,6 +177,9 @@ func (p *Plugin) OnTrafficFromClient(
 	inputTensor, err := tf.NewTensor(allTokens)
 	if err != nil {
 		p.Logger.Error("Failed to create input tensor", "error", err)
+		if isSQLi(queryString) {
+			return errorResponse(), nil
+		}
 		return req, nil
 	}
 
@@ -150,44 +195,22 @@ func (p *Plugin) OnTrafficFromClient(
 	)
 	if err != nil {
 		p.Logger.Error("Failed to run model", "error", err)
+		if isSQLi(queryString) {
+			return errorResponse(), nil
+		}
 		return req, nil
 	}
 	predictions := output[0].Value().([][]float32)
-	p.Logger.Trace("Prediction", "prediction", predictions[0][0])
-
-	// Check if the query is an SQL injection using libinjection.
-	injection, _ := libinjection.IsSQLi(query)
-	p.Logger.Trace("SQLInjection", "is_injection", cast.ToString(injection))
+	score := predictions[0][0]
+	p.Logger.Trace("Deep learning model prediction", "score", score)
 
 	// Check the prediction against the threshold,
 	// otherwise check if the query is an SQL injection using libinjection.
-	if predictions[0][0] >= p.Threshold || injection {
+	injection := isSQLi(queryString)
+	if score >= p.Threshold || injection {
 		Detections.Inc()
-		p.Logger.Warn(
-			"SQL Injection Detected",
-			"prediction", predictions[0][0],
-			"isSQLi", cast.ToString(injection))
-
-		// Create a PostgreSQL error response.
-		errResp := &pgproto3.ErrorResponse{
-			Severity: "ERROR",
-			Message:  "SQL Injection Detected",
-			Detail:   "Back off, you're not welcome here.",
-		}
-
-		// Create a ready for query response.
-		readyForQuery := &pgproto3.ReadyForQuery{TxStatus: 'I'}
-
-		// Create a buffer to write the response to.
-		response := errResp.Encode(nil)
-		// TODO: Decide whether to terminate the connection.
-		response = readyForQuery.Encode(response)
-
-		// Create a response to send back to the client.
-		req.Fields["response"] = structpb.NewStringValue(
-			base64.StdEncoding.EncodeToString(response))
-		req.Fields["terminate"] = structpb.NewBoolValue(true)
-		return req, nil
+		p.Logger.Warn("SQL injection detected by deep learning model", "score", score)
+		return errorResponse(), nil
 	}
 
 	return req, nil
