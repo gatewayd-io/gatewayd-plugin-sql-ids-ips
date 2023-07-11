@@ -8,12 +8,12 @@ import (
 
 var (
 	PluginID = v1.PluginID{
-		Name:      "gatewayd-plugin-sql-idp",
+		Name:      "gatewayd-plugin-sql-ids-ips",
 		Version:   "0.0.1",
-		RemoteUrl: "github.com/gatewayd-io/gatewayd-plugin-sql-idp",
+		RemoteUrl: "github.com/gatewayd-io/gatewayd-plugin-sql-ids-ips",
 	}
 	PluginMap = map[string]goplugin.Plugin{
-		"gatewayd-plugin-sql-idp": &TemplatePlugin{},
+		"gatewayd-plugin-sql-ids-ips": &InjectionDetectionPlugin{},
 	}
 	// TODO: Handle this in a better way
 	// https://github.com/gatewayd-io/gatewayd-plugin-sdk/issues/3
@@ -28,12 +28,12 @@ var (
 			"Mostafa Moradian <mostafa@gatewayd.io>",
 		},
 		"license":    "Apache 2.0",
-		"projectUrl": "https://github.com/gatewayd-io/gatewayd-plugin-sql-idp",
+		"projectUrl": "https://github.com/gatewayd-io/gatewayd-plugin-sql-ids-ips",
 		// Compile-time configuration
 		"config": map[string]interface{}{
 			"metricsEnabled": sdkConfig.GetEnv("METRICS_ENABLED", "true"),
 			"metricsUnixDomainSocket": sdkConfig.GetEnv(
-				"METRICS_UNIX_DOMAIN_SOCKET", "/tmp/gatewayd-plugin-sql-idp.sock"),
+				"METRICS_UNIX_DOMAIN_SOCKET", "/tmp/gatewayd-plugin-sql-ids-ips.sock"),
 			"metricsEndpoint": sdkConfig.GetEnv("METRICS_ENDPOINT", "/metrics"),
 			"threshold":       sdkConfig.GetEnv("THRESHOLD", "0.8"),
 			"modelPath":       sdkConfig.GetEnv("MODEL_PATH", "sqli_model"),

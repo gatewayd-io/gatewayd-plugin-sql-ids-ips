@@ -10,7 +10,7 @@ import (
 	"github.com/gatewayd-io/gatewayd-plugin-sdk/metrics"
 	p "github.com/gatewayd-io/gatewayd-plugin-sdk/plugin"
 	v1 "github.com/gatewayd-io/gatewayd-plugin-sdk/plugin/v1"
-	"github.com/gatewayd-io/gatewayd-plugin-sql-idp/plugin"
+	"github.com/gatewayd-io/gatewayd-plugin-sql-ids-ips/plugin"
 	"github.com/hashicorp/go-hclog"
 	goplugin "github.com/hashicorp/go-plugin"
 	"github.com/spf13/cast"

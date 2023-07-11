@@ -5,7 +5,7 @@ build: tidy
 	go build -ldflags "-s -w"
 
 checksum:
-	sha256sum -b gatewayd-plugin-sql-idp
+	sha256sum -b gatewayd-plugin-sql-ids-ips
 
 update-all:
 	go get -u ./...

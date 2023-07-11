@@ -28,25 +28,25 @@ type Plugin struct {
 	Threshold float32
 }
 
-type TemplatePlugin struct {
+type InjectionDetectionPlugin struct {
 	goplugin.NetRPCUnsupportedPlugin
 	Impl Plugin
 }
 
 // GRPCServer registers the plugin with the gRPC server.
-func (p *TemplatePlugin) GRPCServer(b *goplugin.GRPCBroker, s *grpc.Server) error {
+func (p *InjectionDetectionPlugin) GRPCServer(b *goplugin.GRPCBroker, s *grpc.Server) error {
 	v1.RegisterGatewayDPluginServiceServer(s, &p.Impl)
 	return nil
 }
 
 // GRPCClient returns the plugin client.
-func (p *TemplatePlugin) GRPCClient(ctx context.Context, b *goplugin.GRPCBroker, c *grpc.ClientConn) (interface{}, error) {
+func (p *InjectionDetectionPlugin) GRPCClient(ctx context.Context, b *goplugin.GRPCBroker, c *grpc.ClientConn) (interface{}, error) {
 	return v1.NewGatewayDPluginServiceClient(c), nil
 }
 
 // NewTemplatePlugin returns a new instance of the TestPlugin.
-func NewTemplatePlugin(impl Plugin) *TemplatePlugin {
-	return &TemplatePlugin{
+func NewTemplatePlugin(impl Plugin) *InjectionDetectionPlugin {
+	return &InjectionDetectionPlugin{
 		NetRPCUnsupportedPlugin: goplugin.NetRPCUnsupportedPlugin{},
 		Impl:                    impl,
 	}

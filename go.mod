@@ -1,4 +1,4 @@
-module github.com/gatewayd-io/gatewayd-plugin-sql-idp
+module github.com/gatewayd-io/gatewayd-plugin-sql-ids-ips
 
 go 1.20
 

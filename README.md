@@ -1,10 +1,10 @@
 <p align="center">
-  <!-- <a href="https://gatewayd.io/docs/plugins/gatewayd-plugin-sql-idp"> -->
+  <!-- <a href="https://gatewayd.io/docs/plugins/gatewayd-plugin-sql-ids-ips"> -->
     <picture>
-      <img alt="gatewayd-plugin-sql-idp-logo" src="https://github.com/gatewayd-io/gatewayd-plugin-sql-idp/blob/main/assets/gatewayd-plugin-sql-idp-logo.png" width="96" />
+      <img alt="gatewayd-plugin-sql-ids-ips-logo" src="https://github.com/gatewayd-io/gatewayd-plugin-sql-ids-ips/blob/main/assets/gatewayd-plugin-sql-ids-ips-logo.png" width="96" />
     </picture>
   <!-- </a> -->
-  <h3 align="center">gatewayd-plugin-sql-idp</h3>
+  <h3 align="center">gatewayd-plugin-sql-ids-ips</h3>
   <p align="center">GatewayD plugin for SQL injection detection and prevention.</p>
 </p>
 
@@ -26,7 +26,7 @@ To build the plugin for development and testing, run the following command:
 make build-dev
 ```
 
-Running the above command causes the `go mod tidy` and `go build` to run for compiling and generating the plugin binary in the current directory, named `gatewayd-plugin-sql-idp`.
+Running the above command causes the `go mod tidy` and `go build` to run for compiling and generating the plugin binary in the current directory, named `gatewayd-plugin-sql-ids-ips`.
 
 <!--
 ## Sentry

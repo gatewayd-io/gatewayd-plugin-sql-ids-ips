@@ -12,11 +12,11 @@ timeout: 30s
 
 plugins:
   # Plugin name
-  - name: gatewayd-plugin-sql-idp
+  - name: gatewayd-plugin-sql-ids-ips
     # whether to enable or disable the plugin on the next run
     enabled: True
     # path to the plugin's binary file
-    localPath: ../gatewayd-plugin-sql-idp/gatewayd-plugin-sql-idp
+    localPath: ../gatewayd-plugin-sql-ids-ips/gatewayd-plugin-sql-ids-ips
     # Pass cmdline args to the plugin
     args: ["--log-level", "info"]
     # Pass environment variables to the plugin
@@ -28,7 +28,7 @@ plugins:
       - MAGIC_COOKIE_KEY=GATEWAYD_PLUGIN
       - MAGIC_COOKIE_VALUE=5712b87aa5d7e9f9e9ab643e6603181c5b796015cb1c09d6f5ada882bf2a1872
       - METRICS_ENABLED=True
-      - METRICS_UNIX_DOMAIN_SOCKET=/tmp/gatewayd-plugin-sql-idp.sock
+      - METRICS_UNIX_DOMAIN_SOCKET=/tmp/gatewayd-plugin-sql-ids-ips.sock
       - METRICS_PATH=/metrics
       # Threshold determine the minimum prediction confidence
       # required to detect an SQL injection attack. Any value

@@ -14,4 +14,4 @@
 # Dependency directories (remove the comment below to include it)
 # vendor/
 
-gatewayd-plugin-sql-idp
+gatewayd-plugin-sql-ids-ips
