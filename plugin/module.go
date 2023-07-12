@@ -9,7 +9,7 @@ import (
 var (
 	PluginID = v1.PluginID{
 		Name:      "gatewayd-plugin-sql-ids-ips",
-		Version:   "0.0.1",
+		Version:   "0.0.5",
 		RemoteUrl: "github.com/gatewayd-io/gatewayd-plugin-sql-ids-ips",
 	}
 	PluginMap = map[string]goplugin.Plugin{
@@ -23,7 +23,7 @@ var (
 			"version":   PluginID.Version,
 			"remoteUrl": PluginID.RemoteUrl,
 		},
-		"description": "Template plugin",
+		"description": "GatewayD plugin for detection and prevention of SQL injection attacks",
 		"authors": []interface{}{
 			"Mostafa Moradian <mostafa@gatewayd.io>",
 		},
@@ -44,7 +44,7 @@ var (
 			// https://github.com/gatewayd-io/gatewayd-plugin-sdk/issues/3
 			int32(v1.HookName_HOOK_NAME_ON_TRAFFIC_FROM_CLIENT),
 		},
-		"tags":       []interface{}{"plugin", "sql", "idp"},
+		"tags":       []interface{}{"plugin", "sql", "ids", "ips", "security", "waf"},
 		"categories": []interface{}{"plugin", "enterprise"},
 	}
 )
