@@ -9,7 +9,7 @@ checksum:
 
 update-all:
 	go get -u ./...
-
+	go mod tidy
 
 build-dev: tidy
 	go build

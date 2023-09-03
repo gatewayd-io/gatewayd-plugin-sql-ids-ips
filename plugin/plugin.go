@@ -17,7 +17,6 @@ import (
 	"github.com/jackc/pgx/pgproto3"
 	"github.com/spf13/cast"
 	"google.golang.org/grpc"
-	"google.golang.org/protobuf/types/known/structpb"
 )
 
 type Plugin struct {
@@ -55,18 +54,16 @@ func NewTemplatePlugin(impl Plugin) *InjectionDetectionPlugin {
 // GetPluginConfig returns the plugin config. This is called by GatewayD
 // when the plugin is loaded. The plugin config is used to configure the
 // plugin.
-func (p *Plugin) GetPluginConfig(
-	ctx context.Context, _ *structpb.Struct) (*structpb.Struct, error) {
+func (p *Plugin) GetPluginConfig(ctx context.Context, _ *v1.Struct) (*v1.Struct, error) {
 	GetPluginConfig.Inc()
 
-	return structpb.NewStruct(PluginConfig)
+	return v1.NewStruct(PluginConfig)
 }
 
 // OnTrafficFromClient is called when a request is received by GatewayD from the client.
 // This can be used to modify the request or terminate the connection by returning an error
 // or a response.
-func (p *Plugin) OnTrafficFromClient(
-	ctx context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (p *Plugin) OnTrafficFromClient(ctx context.Context, req *v1.Struct) (*v1.Struct, error) {
 	OnTrafficFromClient.Inc()
 	// Handle the client message.
 	req, err := postgres.HandleClientMessage(req, p.Logger)
@@ -114,7 +111,7 @@ func (p *Plugin) OnTrafficFromClient(
 		return injection
 	}
 
-	errorResponse := func() *structpb.Struct {
+	errorResponse := func() *v1.Struct {
 		// Create a PostgreSQL error response.
 		errResp := &pgproto3.ErrorResponse{
 			Severity: "EXCEPTION",
@@ -132,9 +129,8 @@ func (p *Plugin) OnTrafficFromClient(
 		response = readyForQuery.Encode(response)
 
 		// Create a response to send back to the client.
-		req.Fields["response"] = structpb.NewStringValue(
-			base64.StdEncoding.EncodeToString(response))
-		req.Fields["terminate"] = structpb.NewBoolValue(true)
+		req.Fields["response"] = v1.NewBytesValue(response)
+		req.Fields["terminate"] = v1.NewBoolValue(true)
 
 		return req
 	}
