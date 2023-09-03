@@ -1,11 +1,12 @@
 package plugin
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"net/http"
+	"net/url"
 
 	"github.com/corazawaf/libinjection-go"
 	tf "github.com/galeone/tensorflow/tensorflow/go"
@@ -27,6 +28,7 @@ type Plugin struct {
 	Threshold                  float32
 	EnableLibinjection         bool
 	LibinjectionPermissiveMode bool
+	APIAddress                 string
 }
 
 type InjectionDetectionPlugin struct {
@@ -144,9 +146,27 @@ func (p *Plugin) OnTrafficFromClient(ctx context.Context, req *v1.Struct) (*v1.S
 		return req
 	}
 
-	// Make an HTTP GET request to the tokenize service.
-	resp, err := http.Get(
-		fmt.Sprintf("http://localhost:5000/tokenize_and_sequence/%s", queryString))
+	// Create a JSON body for the request.
+	body, err := json.Marshal(map[string]interface{}{
+		"query": queryString,
+	})
+	if err != nil {
+		p.Logger.Error("Failed to marshal body", "error", err)
+		if isSQLi(queryString) && !p.LibinjectionPermissiveMode {
+			return errorResponse(), nil
+		}
+		return req, nil
+	}
+	// Make an HTTP POST request to the tokenize service.
+	tokenizeEndpoint, err := url.JoinPath(p.APIAddress, "/tokenize_and_sequence")
+	if err != nil {
+		p.Logger.Error("Failed to join API address and path", "error", err)
+		if isSQLi(queryString) && !p.LibinjectionPermissiveMode {
+			return errorResponse(), nil
+		}
+		return req, nil
+	}
+	resp, err := http.Post(tokenizeEndpoint, "application/json", bytes.NewBuffer(body))
 	if err != nil {
 		p.Logger.Error("Failed to make GET request", "error", err)
 		if isSQLi(queryString) && !p.LibinjectionPermissiveMode {

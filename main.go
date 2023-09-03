@@ -54,6 +54,7 @@ func main() {
 		pluginInstance.Impl.EnableLibinjection = cast.ToBool(cfg["enableLibinjection"])
 		pluginInstance.Impl.LibinjectionPermissiveMode = cast.ToBool(
 			cfg["libinjectionPermissiveMode"])
+		pluginInstance.Impl.APIAddress = cast.ToString(cfg["apiAddress"])
 	}
 
 	goplugin.Serve(&goplugin.ServeConfig{
