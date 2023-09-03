@@ -22,9 +22,11 @@ import (
 type Plugin struct {
 	goplugin.GRPCPlugin
 	v1.GatewayDPluginServiceServer
-	Logger    hclog.Logger
-	Model     *tf.SavedModel
-	Threshold float32
+	Logger                     hclog.Logger
+	Model                      *tf.SavedModel
+	Threshold                  float32
+	EnableLibinjection         bool
+	LibinjectionPermissiveMode bool
 }
 
 type InjectionDetectionPlugin struct {
@@ -101,6 +103,11 @@ func (p *Plugin) OnTrafficFromClient(ctx context.Context, req *v1.Struct) (*v1.S
 	queryString := cast.ToString(queryMap["String"])
 
 	isSQLi := func(query string) bool {
+		// Check if libinjection is enabled.
+		if !p.EnableLibinjection {
+			return false
+		}
+
 		// Check if the query is an SQL injection using libinjection.
 		injection, _ := libinjection.IsSQLi(query)
 		if injection {
@@ -112,6 +119,8 @@ func (p *Plugin) OnTrafficFromClient(ctx context.Context, req *v1.Struct) (*v1.S
 	}
 
 	errorResponse := func() *v1.Struct {
+		Preventions.Inc()
+
 		// Create a PostgreSQL error response.
 		errResp := &pgproto3.ErrorResponse{
 			Severity: "EXCEPTION",
@@ -140,7 +149,7 @@ func (p *Plugin) OnTrafficFromClient(ctx context.Context, req *v1.Struct) (*v1.S
 		fmt.Sprintf("http://localhost:5000/tokenize_and_sequence/%s", queryString))
 	if err != nil {
 		p.Logger.Error("Failed to make GET request", "error", err)
-		if isSQLi(queryString) {
+		if isSQLi(queryString) && !p.LibinjectionPermissiveMode {
 			return errorResponse(), nil
 		}
 		return req, nil
@@ -151,7 +160,7 @@ func (p *Plugin) OnTrafficFromClient(ctx context.Context, req *v1.Struct) (*v1.S
 	var data map[string]interface{}
 	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
 		p.Logger.Error("Failed to decode response body", "error", err)
-		if isSQLi(queryString) {
+		if isSQLi(queryString) && !p.LibinjectionPermissiveMode {
 			return errorResponse(), nil
 		}
 		return req, nil
@@ -173,7 +182,7 @@ func (p *Plugin) OnTrafficFromClient(ctx context.Context, req *v1.Struct) (*v1.S
 	inputTensor, err := tf.NewTensor(allTokens)
 	if err != nil {
 		p.Logger.Error("Failed to create input tensor", "error", err)
-		if isSQLi(queryString) {
+		if isSQLi(queryString) && !p.LibinjectionPermissiveMode {
 			return errorResponse(), nil
 		}
 		return req, nil
@@ -191,7 +200,7 @@ func (p *Plugin) OnTrafficFromClient(ctx context.Context, req *v1.Struct) (*v1.S
 	)
 	if err != nil {
 		p.Logger.Error("Failed to run model", "error", err)
-		if isSQLi(queryString) {
+		if isSQLi(queryString) && !p.LibinjectionPermissiveMode {
 			return errorResponse(), nil
 		}
 		return req, nil
@@ -203,10 +212,20 @@ func (p *Plugin) OnTrafficFromClient(ctx context.Context, req *v1.Struct) (*v1.S
 	// Check the prediction against the threshold,
 	// otherwise check if the query is an SQL injection using libinjection.
 	injection := isSQLi(queryString)
-	if score >= p.Threshold || injection {
+	if score >= p.Threshold {
+		if p.EnableLibinjection && !injection {
+			p.Logger.Debug("False positive detected by libinjection")
+		}
+
 		Detections.Inc()
 		p.Logger.Warn("SQL injection detected by deep learning model", "score", score)
 		return errorResponse(), nil
+	} else if p.EnableLibinjection && injection && !p.LibinjectionPermissiveMode {
+		Detections.Inc()
+		p.Logger.Warn("SQL injection detected by libinjection")
+		return errorResponse(), nil
+	} else {
+		p.Logger.Trace("No SQL injection detected")
 	}
 
 	return req, nil

@@ -51,6 +51,9 @@ func main() {
 		defer model.Session.Close()
 
 		pluginInstance.Impl.Model = model
+		pluginInstance.Impl.EnableLibinjection = cast.ToBool(cfg["enableLibinjection"])
+		pluginInstance.Impl.LibinjectionPermissiveMode = cast.ToBool(
+			cfg["libinjectionPermissiveMode"])
 	}
 
 	goplugin.Serve(&goplugin.ServeConfig{

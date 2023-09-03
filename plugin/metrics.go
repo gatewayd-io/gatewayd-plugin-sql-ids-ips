@@ -25,4 +25,9 @@ var (
 		Name:      "detections_total",
 		Help:      "The total number of malicious requests detected",
 	})
+	Preventions = promauto.NewCounter(prometheus.CounterOpts{
+		Namespace: metrics.Namespace,
+		Name:      "preventions_total",
+		Help:      "The total number of malicious requests prevented",
+	})
 )

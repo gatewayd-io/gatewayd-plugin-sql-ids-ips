@@ -40,5 +40,12 @@ plugins:
       # The following env-vars disable the verbose logging of Tensorflow.
       - KMP_AFFINITY=noverbose
       - TF_CPP_MIN_LOG_LEVEL=3
+      - ENABLE_LIBINJECTION=True
+      # True (permissive): The plugin will block the request only if it detects an SQL injection
+      #                    attack and the prediction confidence is above the threshold. This is
+      #                    the default mode.
+      # False (strict): The plugin will block the request if it detects an SQL injection attack.
+      #                 This greatly increases the false positive rate.
+      - LIBINJECTION_PERMISSIVE_MODE=True
     # Checksum hash to verify the binary before loading
     checksum: dee4aa014a722e1865d91744a4fd310772152467d9c6ab4ba17fd9dd40d3f724

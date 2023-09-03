@@ -34,9 +34,11 @@ var (
 			"metricsEnabled": sdkConfig.GetEnv("METRICS_ENABLED", "true"),
 			"metricsUnixDomainSocket": sdkConfig.GetEnv(
 				"METRICS_UNIX_DOMAIN_SOCKET", "/tmp/gatewayd-plugin-sql-ids-ips.sock"),
-			"metricsEndpoint": sdkConfig.GetEnv("METRICS_ENDPOINT", "/metrics"),
-			"threshold":       sdkConfig.GetEnv("THRESHOLD", "0.8"),
-			"modelPath":       sdkConfig.GetEnv("MODEL_PATH", "sqli_model"),
+			"metricsEndpoint":            sdkConfig.GetEnv("METRICS_ENDPOINT", "/metrics"),
+			"threshold":                  sdkConfig.GetEnv("THRESHOLD", "0.8"),
+			"modelPath":                  sdkConfig.GetEnv("MODEL_PATH", "sqli_model"),
+			"enableLibinjection":         sdkConfig.GetEnv("ENABLE_LIBINJECTION", "true"),
+			"libinjectionPermissiveMode": sdkConfig.GetEnv("LIBINJECTION_MODE", "true"),
 		},
 		"hooks": []interface{}{
 			// Converting HookName to int32 is required because the plugin
