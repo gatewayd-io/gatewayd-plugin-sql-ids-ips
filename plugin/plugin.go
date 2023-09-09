@@ -113,7 +113,6 @@ func (p *Plugin) OnTrafficFromClient(ctx context.Context, req *v1.Struct) (*v1.S
 		// Check if the query is an SQL injection using libinjection.
 		injection, _ := libinjection.IsSQLi(query)
 		if injection {
-			Detections.Inc()
 			p.Logger.Warn("SQL injection detected by libinjection")
 		}
 		p.Logger.Trace("SQLInjection", "is_injection", cast.ToString(injection))
