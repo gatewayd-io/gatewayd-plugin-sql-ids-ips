@@ -27,7 +27,7 @@ var (
 		"authors": []interface{}{
 			"Mostafa Moradian <mostafa@gatewayd.io>",
 		},
-		"license":    "Apache 2.0",
+		"license":    "AGPL-3.0",
 		"projectUrl": "https://github.com/gatewayd-io/gatewayd-plugin-sql-ids-ips",
 		// Compile-time configuration
 		"config": map[string]interface{}{
