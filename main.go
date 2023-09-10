@@ -28,7 +28,7 @@ func main() {
 		Color:      hclog.ColorOff,
 	})
 
-	pluginInstance := plugin.NewTemplatePlugin(plugin.Plugin{
+	pluginInstance := plugin.NewInjectionDetectionPlugin(plugin.Plugin{
 		Logger: logger,
 	})
 

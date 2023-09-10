@@ -47,8 +47,8 @@ func (p *InjectionDetectionPlugin) GRPCClient(ctx context.Context, b *goplugin.G
 	return v1.NewGatewayDPluginServiceClient(c), nil
 }
 
-// NewTemplatePlugin returns a new instance of the TestPlugin.
-func NewTemplatePlugin(impl Plugin) *InjectionDetectionPlugin {
+// NewInjectionDetectionPlugin returns a new instance of the TestPlugin.
+func NewInjectionDetectionPlugin(impl Plugin) *InjectionDetectionPlugin {
 	return &InjectionDetectionPlugin{
 		NetRPCUnsupportedPlugin: goplugin.NetRPCUnsupportedPlugin{},
 		Impl:                    impl,
