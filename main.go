@@ -14,6 +14,7 @@ import (
 	"github.com/hashicorp/go-hclog"
 	goplugin "github.com/hashicorp/go-plugin"
 	"github.com/spf13/cast"
+	"github.com/vikesh-raj/go-sentencepiece-encoder/sentencepiece"
 )
 
 func main() {
@@ -38,6 +39,13 @@ func main() {
 		if metricsConfig != nil && metricsConfig.Enabled {
 			go metrics.ExposeMetrics(metricsConfig, logger)
 		}
+
+		tokenizer, err := sentencepiece.NewSentencepieceFromFile("/home/mostafa/gatewayd/DeepSQLi/training/sqli_spm.model", false)
+		if err != nil {
+			logger.Error("Failed to load tokenizer", "error", err)
+			panic(err)
+		}
+		pluginInstance.Impl.Tokenizer = tokenizer
 
 		pluginInstance.Impl.Threshold = cast.ToFloat32(cfg["threshold"])
 

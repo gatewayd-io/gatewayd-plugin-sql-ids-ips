@@ -11,6 +11,7 @@ require (
 	github.com/jackc/pgx v3.6.2+incompatible
 	github.com/prometheus/client_golang v1.16.0
 	github.com/spf13/cast v1.5.1
+	github.com/vikesh-raj/go-sentencepiece-encoder v1.1.1
 	google.golang.org/grpc v1.57.0
 )
 

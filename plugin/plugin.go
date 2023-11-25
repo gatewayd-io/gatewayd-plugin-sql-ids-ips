@@ -1,12 +1,10 @@
 package plugin
 
 import (
-	"bytes"
 	"context"
 	"encoding/base64"
 	"encoding/json"
-	"net/http"
-	"net/url"
+	"slices"
 
 	"github.com/corazawaf/libinjection-go"
 	tf "github.com/galeone/tensorflow/tensorflow/go"
@@ -17,6 +15,7 @@ import (
 	goplugin "github.com/hashicorp/go-plugin"
 	"github.com/jackc/pgx/pgproto3"
 	"github.com/spf13/cast"
+	"github.com/vikesh-raj/go-sentencepiece-encoder/sentencepiece"
 	"google.golang.org/grpc"
 )
 
@@ -24,6 +23,7 @@ type Plugin struct {
 	goplugin.GRPCPlugin
 	v1.GatewayDPluginServiceServer
 	Logger                     hclog.Logger
+	Tokenizer                  sentencepiece.Sentencepiece
 	Model                      *tf.SavedModel
 	Threshold                  float32
 	EnableLibinjection         bool
@@ -145,50 +145,61 @@ func (p *Plugin) OnTrafficFromClient(ctx context.Context, req *v1.Struct) (*v1.S
 		return req
 	}
 
-	// Create a JSON body for the request.
-	body, err := json.Marshal(map[string]interface{}{
-		"query": queryString,
-	})
-	if err != nil {
-		p.Logger.Error("Failed to marshal body", "error", err)
-		if isSQLi(queryString) && !p.LibinjectionPermissiveMode {
-			return errorResponse(), nil
-		}
-		return req, nil
-	}
-	// Make an HTTP POST request to the tokenize service.
-	tokenizeEndpoint, err := url.JoinPath(p.APIAddress, "/tokenize_and_sequence")
-	if err != nil {
-		p.Logger.Error("Failed to join API address and path", "error", err)
-		if isSQLi(queryString) && !p.LibinjectionPermissiveMode {
-			return errorResponse(), nil
-		}
-		return req, nil
-	}
-	resp, err := http.Post(tokenizeEndpoint, "application/json", bytes.NewBuffer(body))
-	if err != nil {
-		p.Logger.Error("Failed to make GET request", "error", err)
-		if isSQLi(queryString) && !p.LibinjectionPermissiveMode {
-			return errorResponse(), nil
-		}
-		return req, nil
-	}
+	// // Create a JSON body for the request.
+	// body, err := json.Marshal(map[string]interface{}{
+	// 	"query": queryString,
+	// })
+	// if err != nil {
+	// 	p.Logger.Error("Failed to marshal body", "error", err)
+	// 	if isSQLi(queryString) && !p.LibinjectionPermissiveMode {
+	// 		return errorResponse(), nil
+	// 	}
+	// 	return req, nil
+	// }
+	// // Make an HTTP POST request to the tokenize service.
+	// tokenizeEndpoint, err := url.JoinPath(p.APIAddress, "/tokenize_and_sequence")
+	// if err != nil {
+	// 	p.Logger.Error("Failed to join API address and path", "error", err)
+	// 	if isSQLi(queryString) && !p.LibinjectionPermissiveMode {
+	// 		return errorResponse(), nil
+	// 	}
+	// 	return req, nil
+	// }
+	// resp, err := http.Post(tokenizeEndpoint, "application/json", bytes.NewBuffer(body))
+	// if err != nil {
+	// 	p.Logger.Error("Failed to make GET request", "error", err)
+	// 	if isSQLi(queryString) && !p.LibinjectionPermissiveMode {
+	// 		return errorResponse(), nil
+	// 	}
+	// 	return req, nil
+	// }
 
-	// Read the response body.
-	defer resp.Body.Close()
-	var data map[string]interface{}
-	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
-		p.Logger.Error("Failed to decode response body", "error", err)
-		if isSQLi(queryString) && !p.LibinjectionPermissiveMode {
-			return errorResponse(), nil
-		}
-		return req, nil
-	}
+	// // Read the response body.
+	// defer resp.Body.Close()
+	// var data map[string]interface{}
+	// if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
+	// 	p.Logger.Error("Failed to decode response body", "error", err)
+	// 	if isSQLi(queryString) && !p.LibinjectionPermissiveMode {
+	// 		return errorResponse(), nil
+	// 	}
+	// 	return req, nil
+	// }
+
+	// Tokenize the query using the SentencePiece tokenizer.
+	data := p.Tokenizer.TokenizeToIDs(queryString)
 
 	// Get the tokens from the response.
 	var tokens []float32
-	for _, v := range data["tokens"].([]interface{}) {
+	for _, v := range data {
 		tokens = append(tokens, cast.ToFloat32(v))
+	}
+	tokens = slices.Grow(tokens, 100)
+
+	// Pad the tokens to the maximum length.
+	if len(tokens) < 100 {
+		tmp := make([]float32, 100-len(tokens))
+		// Prepend the tokens with 0s.
+		tokens = append(tokens, tmp...)
 	}
 
 	// Convert []float32 to a [][]float32.
@@ -225,8 +236,9 @@ func (p *Plugin) OnTrafficFromClient(ctx context.Context, req *v1.Struct) (*v1.S
 		return req, nil
 	}
 	predictions := output[0].Value().([][]float32)
-	score := predictions[0][0]
-	p.Logger.Trace("Deep learning model prediction", "score", score)
+	loss := predictions[0][0]
+	score := predictions[0][1]
+	p.Logger.Trace("Deep learning model prediction", "loss", loss, "score", score)
 
 	// Check the prediction against the threshold,
 	// otherwise check if the query is an SQL injection using libinjection.
