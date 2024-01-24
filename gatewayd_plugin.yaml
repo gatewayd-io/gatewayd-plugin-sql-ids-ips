@@ -17,6 +17,7 @@ plugins:
     enabled: True
     # path to the plugin's binary file
     localPath: ../gatewayd-plugin-sql-ids-ips/gatewayd-plugin-sql-ids-ips
+    url: github.com/gatewayd-io/gatewayd-plugin-sql-ids-ips@latest
     # Pass cmdline args to the plugin
     args: ["--log-level", "info"]
     # Pass environment variables to the plugin
