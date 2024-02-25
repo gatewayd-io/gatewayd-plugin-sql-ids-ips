@@ -10,6 +10,7 @@ import (
 
 	"github.com/corazawaf/libinjection-go"
 	tf "github.com/galeone/tensorflow/tensorflow/go"
+	sdkAct "github.com/gatewayd-io/gatewayd-plugin-sdk/act"
 	"github.com/gatewayd-io/gatewayd-plugin-sdk/databases/postgres"
 	sdkPlugin "github.com/gatewayd-io/gatewayd-plugin-sdk/plugin"
 	v1 "github.com/gatewayd-io/gatewayd-plugin-sdk/plugin/v1"
@@ -104,55 +105,14 @@ func (p *Plugin) OnTrafficFromClient(ctx context.Context, req *v1.Struct) (*v1.S
 	}
 	queryString := cast.ToString(queryMap["String"])
 
-	isSQLi := func(query string) bool {
-		// Check if libinjection is enabled.
-		if !p.EnableLibinjection {
-			return false
-		}
-
-		// Check if the query is an SQL injection using libinjection.
-		injection, _ := libinjection.IsSQLi(query)
-		if injection {
-			p.Logger.Warn("SQL injection detected by libinjection")
-		}
-		p.Logger.Trace("SQLInjection", "is_injection", cast.ToString(injection))
-		return injection
-	}
-
-	errorResponse := func() *v1.Struct {
-		Preventions.Inc()
-
-		// Create a PostgreSQL error response.
-		errResp := &pgproto3.ErrorResponse{
-			Severity: "EXCEPTION",
-			Message:  "SQL injection detected",
-			Detail:   "Back off, you're not welcome here.",
-			Code:     "42000",
-		}
-
-		// Create a ready for query response.
-		readyForQuery := &pgproto3.ReadyForQuery{TxStatus: 'I'}
-
-		// Create a buffer to write the response to.
-		response := errResp.Encode(nil)
-		// TODO: Decide whether to terminate the connection.
-		response = readyForQuery.Encode(response)
-
-		// Create a response to send back to the client.
-		req.Fields["response"] = v1.NewBytesValue(response)
-		req.Fields["terminate"] = v1.NewBoolValue(true)
-
-		return req
-	}
-
 	// Create a JSON body for the request.
 	body, err := json.Marshal(map[string]interface{}{
 		"query": queryString,
 	})
 	if err != nil {
 		p.Logger.Error("Failed to marshal body", "error", err)
-		if isSQLi(queryString) && !p.LibinjectionPermissiveMode {
-			return errorResponse(), nil
+		if p.isSQLi(queryString) && !p.LibinjectionPermissiveMode {
+			return p.errorResponse(req, queryString), nil
 		}
 		return req, nil
 	}
@@ -160,16 +120,16 @@ func (p *Plugin) OnTrafficFromClient(ctx context.Context, req *v1.Struct) (*v1.S
 	tokenizeEndpoint, err := url.JoinPath(p.APIAddress, "/tokenize_and_sequence")
 	if err != nil {
 		p.Logger.Error("Failed to join API address and path", "error", err)
-		if isSQLi(queryString) && !p.LibinjectionPermissiveMode {
-			return errorResponse(), nil
+		if p.isSQLi(queryString) && !p.LibinjectionPermissiveMode {
+			return p.errorResponse(req, queryString), nil
 		}
 		return req, nil
 	}
 	resp, err := http.Post(tokenizeEndpoint, "application/json", bytes.NewBuffer(body))
 	if err != nil {
 		p.Logger.Error("Failed to make GET request", "error", err)
-		if isSQLi(queryString) && !p.LibinjectionPermissiveMode {
-			return errorResponse(), nil
+		if p.isSQLi(queryString) && !p.LibinjectionPermissiveMode {
+			return p.errorResponse(req, queryString), nil
 		}
 		return req, nil
 	}
@@ -179,8 +139,8 @@ func (p *Plugin) OnTrafficFromClient(ctx context.Context, req *v1.Struct) (*v1.S
 	var data map[string]interface{}
 	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
 		p.Logger.Error("Failed to decode response body", "error", err)
-		if isSQLi(queryString) && !p.LibinjectionPermissiveMode {
-			return errorResponse(), nil
+		if p.isSQLi(queryString) && !p.LibinjectionPermissiveMode {
+			return p.errorResponse(req, queryString), nil
 		}
 		return req, nil
 	}
@@ -201,8 +161,8 @@ func (p *Plugin) OnTrafficFromClient(ctx context.Context, req *v1.Struct) (*v1.S
 	inputTensor, err := tf.NewTensor(allTokens)
 	if err != nil {
 		p.Logger.Error("Failed to create input tensor", "error", err)
-		if isSQLi(queryString) && !p.LibinjectionPermissiveMode {
-			return errorResponse(), nil
+		if p.isSQLi(queryString) && !p.LibinjectionPermissiveMode {
+			return p.errorResponse(req, queryString), nil
 		}
 		return req, nil
 	}
@@ -219,8 +179,8 @@ func (p *Plugin) OnTrafficFromClient(ctx context.Context, req *v1.Struct) (*v1.S
 	)
 	if err != nil {
 		p.Logger.Error("Failed to run model", "error", err)
-		if isSQLi(queryString) && !p.LibinjectionPermissiveMode {
-			return errorResponse(), nil
+		if p.isSQLi(queryString) && !p.LibinjectionPermissiveMode {
+			return p.errorResponse(req, queryString), nil
 		}
 		return req, nil
 	}
@@ -230,7 +190,7 @@ func (p *Plugin) OnTrafficFromClient(ctx context.Context, req *v1.Struct) (*v1.S
 
 	// Check the prediction against the threshold,
 	// otherwise check if the query is an SQL injection using libinjection.
-	injection := isSQLi(queryString)
+	injection := p.isSQLi(queryString)
 	if score >= p.Threshold {
 		if p.EnableLibinjection && !injection {
 			p.Logger.Debug("False positive detected by libinjection")
@@ -238,14 +198,62 @@ func (p *Plugin) OnTrafficFromClient(ctx context.Context, req *v1.Struct) (*v1.S
 
 		Detections.Inc()
 		p.Logger.Warn("SQL injection detected by deep learning model", "score", score)
-		return errorResponse(), nil
+		return p.errorResponse(req, queryString), nil
 	} else if p.EnableLibinjection && injection && !p.LibinjectionPermissiveMode {
 		Detections.Inc()
 		p.Logger.Warn("SQL injection detected by libinjection")
-		return errorResponse(), nil
+		return p.errorResponse(req, queryString), nil
 	} else {
 		p.Logger.Trace("No SQL injection detected")
 	}
 
 	return req, nil
+}
+
+func (p *Plugin) isSQLi(query string) bool {
+	// Check if libinjection is enabled.
+	if !p.EnableLibinjection {
+		return false
+	}
+
+	// Check if the query is an SQL injection using libinjection.
+	injection, _ := libinjection.IsSQLi(query)
+	if injection {
+		p.Logger.Warn("SQL injection detected by libinjection")
+	}
+	p.Logger.Trace("SQLInjection", "is_injection", cast.ToString(injection))
+	return injection
+}
+
+func (p *Plugin) errorResponse(req *v1.Struct, queryString string) *v1.Struct {
+	Preventions.Inc()
+
+	// Create a PostgreSQL error response.
+	errResp := postgres.ErrorResponse(
+		"SQL injection detected",
+		"EXCEPTION",
+		"42000",
+		"Back off, you're not welcome here.",
+	)
+
+	// Create a ready for query response.
+	readyForQuery := &pgproto3.ReadyForQuery{TxStatus: 'I'}
+	// TODO: Decide whether to terminate the connection.
+	response := readyForQuery.Encode(errResp)
+
+	signals, err := v1.NewList([]any{
+		sdkAct.Terminate().ToMap(),
+		sdkAct.Log("error", "SQL injection detected", map[string]any{
+			"query": queryString,
+		}).ToMap(),
+	})
+	if err != nil {
+		p.Logger.Error("Failed to create signals", "error", err)
+		return req
+	}
+
+	// Create a response to send back to the client.
+	req.Fields[sdkAct.Signals] = v1.NewListValue(signals)
+	req.Fields["response"] = v1.NewBytesValue(response)
+	return req
 }
