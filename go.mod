@@ -1,6 +1,6 @@
 module github.com/gatewayd-io/gatewayd-plugin-sql-ids-ips
 
-go 1.20
+go 1.22
 
 require (
 	github.com/corazawaf/libinjection-go v0.1.3
