@@ -232,8 +232,8 @@ func (p *Plugin) errorResponse(req *v1.Struct, queryString string) *v1.Struct {
 	errResp := postgres.ErrorResponse(
 		"SQL injection detected",
 		"EXCEPTION",
-		"Back off, you're not welcome here.",
 		"42000",
+		"Back off, you're not welcome here.",
 	)
 
 	// Create a ready for query response.
