@@ -4,7 +4,6 @@ import (
 	"flag"
 	"os"
 
-	tf "github.com/galeone/tensorflow/tensorflow/go"
 	sdkConfig "github.com/gatewayd-io/gatewayd-plugin-sdk/config"
 	"github.com/gatewayd-io/gatewayd-plugin-sdk/logging"
 	"github.com/gatewayd-io/gatewayd-plugin-sdk/metrics"
@@ -40,21 +39,11 @@ func main() {
 		}
 
 		pluginInstance.Impl.Threshold = cast.ToFloat32(cfg["threshold"])
-
-		modelPath := cast.ToString(cfg["modelPath"])
-		// Load the model from the file system
-		model, err := tf.LoadSavedModel(modelPath, []string{"serve"}, nil)
-		if err != nil {
-			logger.Error("Failed to load model", "error", err)
-			panic(err)
-		}
-		defer model.Session.Close()
-
-		pluginInstance.Impl.Model = model
 		pluginInstance.Impl.EnableLibinjection = cast.ToBool(cfg["enableLibinjection"])
 		pluginInstance.Impl.LibinjectionPermissiveMode = cast.ToBool(
 			cfg["libinjectionPermissiveMode"])
-		pluginInstance.Impl.APIAddress = cast.ToString(cfg["apiAddress"])
+		pluginInstance.Impl.TokenizerAPIAddress = cast.ToString(cfg["tokenizerAPIAddress"])
+		pluginInstance.Impl.ServingAPIAddress = cast.ToString(cfg["servingAPIAddress"])
 	}
 
 	goplugin.Serve(&goplugin.ServeConfig{

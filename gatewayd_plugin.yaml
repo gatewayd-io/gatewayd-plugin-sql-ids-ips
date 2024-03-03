@@ -28,14 +28,14 @@ plugins:
       - METRICS_ENABLED=True
       - METRICS_UNIX_DOMAIN_SOCKET=/tmp/gatewayd-plugin-sql-ids-ips.sock
       - METRICS_PATH=/metrics
-      - API_ADDRESS=http://localhost:5000
+      - TOKENIZER_API_ADDRESS=http://localhost:8000
+      - SERVING_API_ADDRESS=http://localhost:8501
       # Threshold determine the minimum prediction confidence
       # required to detect an SQL injection attack. Any value
       # between 0 and 1 is valid, and it is inclusive.
       # Anything below 0.8 is not recommended,
       # but it is dependent on the application and testing.
       - THRESHOLD=0.8
-      - MODEL_PATH=sqli_model
       # The following env-vars disable the verbose logging of Tensorflow.
       - KMP_AFFINITY=noverbose
       - TF_CPP_MIN_LOG_LEVEL=3

@@ -1,15 +1,12 @@
 package plugin
 
 import (
-	"bytes"
 	"context"
 	"encoding/base64"
 	"encoding/json"
-	"net/http"
-	"net/url"
 
+	"github.com/carlmjohnson/requests"
 	"github.com/corazawaf/libinjection-go"
-	tf "github.com/galeone/tensorflow/tensorflow/go"
 	sdkAct "github.com/gatewayd-io/gatewayd-plugin-sdk/act"
 	"github.com/gatewayd-io/gatewayd-plugin-sdk/databases/postgres"
 	sdkPlugin "github.com/gatewayd-io/gatewayd-plugin-sdk/plugin"
@@ -25,11 +22,11 @@ type Plugin struct {
 	goplugin.GRPCPlugin
 	v1.GatewayDPluginServiceServer
 	Logger                     hclog.Logger
-	Model                      *tf.SavedModel
 	Threshold                  float32
 	EnableLibinjection         bool
 	LibinjectionPermissiveMode bool
-	APIAddress                 string
+	TokenizerAPIAddress        string
+	ServingAPIAddress          string
 }
 
 type InjectionDetectionPlugin struct {
@@ -105,87 +102,43 @@ func (p *Plugin) OnTrafficFromClient(ctx context.Context, req *v1.Struct) (*v1.S
 	}
 	queryString := cast.ToString(queryMap["String"])
 
-	// Create a JSON body for the request.
-	body, err := json.Marshal(map[string]interface{}{
-		"query": queryString,
-	})
+	var tokens map[string]interface{}
+	err = requests.
+		URL(p.TokenizerAPIAddress).
+		Path("/tokenize_and_sequence").
+		BodyJSON(map[string]interface{}{
+			"query": queryString,
+		}).
+		ToJSON(&tokens).
+		Fetch(context.Background())
 	if err != nil {
-		p.Logger.Error("Failed to marshal body", "error", err)
+		p.Logger.Error("Failed to make POST request", "error", err)
 		if p.isSQLi(queryString) && !p.LibinjectionPermissiveMode {
 			return p.errorResponse(req, queryString), nil
 		}
 		return req, nil
 	}
-	// Make an HTTP POST request to the tokenize service.
-	tokenizeEndpoint, err := url.JoinPath(p.APIAddress, "/tokenize_and_sequence")
+
+	var output map[string]interface{}
+	err = requests.
+		URL(p.ServingAPIAddress).
+		Path("/v1/models/sqli_model:predict").
+		BodyJSON(map[string]interface{}{
+			"inputs": []interface{}{cast.ToSlice(tokens["tokens"])},
+		}).
+		ToJSON(&output).
+		Fetch(context.Background())
 	if err != nil {
-		p.Logger.Error("Failed to join API address and path", "error", err)
-		if p.isSQLi(queryString) && !p.LibinjectionPermissiveMode {
-			return p.errorResponse(req, queryString), nil
-		}
-		return req, nil
-	}
-	resp, err := http.Post(tokenizeEndpoint, "application/json", bytes.NewBuffer(body))
-	if err != nil {
-		p.Logger.Error("Failed to make GET request", "error", err)
+		p.Logger.Error("Failed to make POST request", "error", err)
 		if p.isSQLi(queryString) && !p.LibinjectionPermissiveMode {
 			return p.errorResponse(req, queryString), nil
 		}
 		return req, nil
 	}
 
-	// Read the response body.
-	defer resp.Body.Close()
-	var data map[string]interface{}
-	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
-		p.Logger.Error("Failed to decode response body", "error", err)
-		if p.isSQLi(queryString) && !p.LibinjectionPermissiveMode {
-			return p.errorResponse(req, queryString), nil
-		}
-		return req, nil
-	}
-
-	// Get the tokens from the response.
-	var tokens []float32
-	for _, v := range data["tokens"].([]interface{}) {
-		tokens = append(tokens, cast.ToFloat32(v))
-	}
-
-	// Convert []float32 to a [][]float32.
-	allTokens := make([][]float32, 1)
-	allTokens[0] = tokens
-
-	p.Logger.Trace("Tokens", "tokens", allTokens)
-
-	// Create a tensor from the tokens.
-	inputTensor, err := tf.NewTensor(allTokens)
-	if err != nil {
-		p.Logger.Error("Failed to create input tensor", "error", err)
-		if p.isSQLi(queryString) && !p.LibinjectionPermissiveMode {
-			return p.errorResponse(req, queryString), nil
-		}
-		return req, nil
-	}
-
-	// Run the model to predict if the query is malicious or not.
-	output, err := p.Model.Session.Run(
-		map[tf.Output]*tf.Tensor{
-			p.Model.Graph.Operation("serving_default_embedding_input").Output(0): inputTensor,
-		},
-		[]tf.Output{
-			p.Model.Graph.Operation("StatefulPartitionedCall").Output(0),
-		},
-		nil,
-	)
-	if err != nil {
-		p.Logger.Error("Failed to run model", "error", err)
-		if p.isSQLi(queryString) && !p.LibinjectionPermissiveMode {
-			return p.errorResponse(req, queryString), nil
-		}
-		return req, nil
-	}
-	predictions := output[0].Value().([][]float32)
-	score := predictions[0][0]
+	predictions := cast.ToSlice(output["outputs"])
+	scores := cast.ToSlice(predictions[0])
+	score := cast.ToFloat32(scores[0])
 	p.Logger.Trace("Deep learning model prediction", "score", score)
 
 	// Check the prediction against the threshold,
