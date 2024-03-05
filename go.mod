@@ -5,7 +5,7 @@ go 1.22
 require (
 	github.com/carlmjohnson/requests v0.23.5
 	github.com/corazawaf/libinjection-go v0.1.3
-	github.com/gatewayd-io/gatewayd-plugin-sdk v0.2.5
+	github.com/gatewayd-io/gatewayd-plugin-sdk v0.2.6
 	github.com/hashicorp/go-hclog v1.6.2
 	github.com/hashicorp/go-plugin v1.6.0
 	github.com/jackc/pgx v3.6.2+incompatible
@@ -21,7 +21,7 @@ require (
 	github.com/fatih/color v1.16.0 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/hashicorp/yamux v0.1.1 // indirect
-	github.com/jackc/pgx/v5 v5.5.3 // indirect
+	github.com/jackc/pgx/v5 v5.5.4 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mitchellh/go-testing-interface v1.14.1 // indirect
@@ -34,9 +34,9 @@ require (
 	github.com/rs/zerolog v1.32.0 // indirect
 	github.com/tetratelabs/wazero v1.6.1-0.20240124004658-4185e533bb18 // indirect
 	github.com/wasilibs/go-pgquery v0.0.0-20240124010238-c9a912d768dc // indirect
-	golang.org/x/net v0.21.0 // indirect
-	golang.org/x/sys v0.17.0 // indirect
+	golang.org/x/net v0.22.0 // indirect
+	golang.org/x/sys v0.18.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240228224816-df926f6c8641 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20240304212257-790db918fca8 // indirect
 	google.golang.org/protobuf v1.32.0 // indirect
 )
