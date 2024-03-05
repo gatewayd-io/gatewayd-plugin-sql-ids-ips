@@ -8,7 +8,7 @@ require (
 	github.com/gatewayd-io/gatewayd-plugin-sdk v0.2.6
 	github.com/hashicorp/go-hclog v1.6.2
 	github.com/hashicorp/go-plugin v1.6.0
-	github.com/jackc/pgx v3.6.2+incompatible
+	github.com/jackc/pgx/v5 v5.5.4
 	github.com/prometheus/client_golang v1.19.0
 	github.com/spf13/cast v1.6.0
 	google.golang.org/grpc v1.62.0
@@ -21,13 +21,11 @@ require (
 	github.com/fatih/color v1.16.0 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/hashicorp/yamux v0.1.1 // indirect
-	github.com/jackc/pgx/v5 v5.5.4 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mitchellh/go-testing-interface v1.14.1 // indirect
 	github.com/oklog/run v1.1.0 // indirect
 	github.com/pganalyze/pg_query_go/v5 v5.1.0 // indirect
-	github.com/pkg/errors v0.9.1 // indirect
 	github.com/prometheus/client_model v0.6.0 // indirect
 	github.com/prometheus/common v0.49.0 // indirect
 	github.com/prometheus/procfs v0.12.0 // indirect

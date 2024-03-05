@@ -13,7 +13,7 @@ import (
 	v1 "github.com/gatewayd-io/gatewayd-plugin-sdk/plugin/v1"
 	"github.com/hashicorp/go-hclog"
 	goplugin "github.com/hashicorp/go-plugin"
-	"github.com/jackc/pgx/pgproto3"
+	"github.com/jackc/pgx/v5/pgproto3"
 	"github.com/spf13/cast"
 	"google.golang.org/grpc"
 )
@@ -192,7 +192,11 @@ func (p *Plugin) errorResponse(req *v1.Struct, queryString string) *v1.Struct {
 	// Create a ready for query response.
 	readyForQuery := &pgproto3.ReadyForQuery{TxStatus: 'I'}
 	// TODO: Decide whether to terminate the connection.
-	response := readyForQuery.Encode(errResp)
+	response, err := readyForQuery.Encode(errResp)
+	if err != nil {
+		p.Logger.Error("Failed to encode ready for query response", "error", err)
+		return req
+	}
 
 	signals, err := v1.NewList([]any{
 		sdkAct.Terminate().ToMap(),
