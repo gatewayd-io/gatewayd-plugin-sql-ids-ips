@@ -5,7 +5,7 @@ go 1.22
 require (
 	github.com/carlmjohnson/requests v0.23.5
 	github.com/corazawaf/libinjection-go v0.1.3
-	github.com/gatewayd-io/gatewayd-plugin-sdk v0.2.7
+	github.com/gatewayd-io/gatewayd-plugin-sdk v0.2.8
 	github.com/hashicorp/go-hclog v1.6.2
 	github.com/hashicorp/go-plugin v1.6.0
 	github.com/jackc/pgx/v5 v5.5.5
