@@ -125,7 +125,7 @@ func (p *Plugin) OnTrafficFromClient(ctx context.Context, req *v1.Struct) (*v1.S
 	var output map[string]interface{}
 	err = requests.
 		URL(p.ServingAPIAddress).
-		Path(fmt.Sprintf("/v%s/models/%s:predict", p.ModelVersion, p.ModelName)).
+		Path(fmt.Sprintf("/v1/models/%s/versions/%s:predict", p.ModelName, p.ModelVersion)).
 		BodyJSON(map[string]interface{}{
 			"inputs": []interface{}{cast.ToSlice(tokens["tokens"])},
 		}).
