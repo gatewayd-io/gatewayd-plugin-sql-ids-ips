@@ -39,6 +39,8 @@ var (
 				"TOKENIZER_API_ADDRESS", "http://localhost:8000"),
 			"servingAPIAddress": sdkConfig.GetEnv(
 				"SERVING_API_ADDRESS", "http://localhost:8501"),
+			"modelName":                  sdkConfig.GetEnv("MODEL_NAME", "sqli_model"),
+			"modelVersion":               sdkConfig.GetEnv("MODEL_VERSION", "1"),
 			"threshold":                  sdkConfig.GetEnv("THRESHOLD", "0.8"),
 			"enableLibinjection":         sdkConfig.GetEnv("ENABLE_LIBINJECTION", "true"),
 			"libinjectionPermissiveMode": sdkConfig.GetEnv("LIBINJECTION_MODE", "true"),

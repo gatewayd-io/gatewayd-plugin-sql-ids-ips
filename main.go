@@ -44,6 +44,8 @@ func main() {
 			cfg["libinjectionPermissiveMode"])
 		pluginInstance.Impl.TokenizerAPIAddress = cast.ToString(cfg["tokenizerAPIAddress"])
 		pluginInstance.Impl.ServingAPIAddress = cast.ToString(cfg["servingAPIAddress"])
+		pluginInstance.Impl.ModelName = cast.ToString(cfg["modelName"])
+		pluginInstance.Impl.ModelVersion = cast.ToString(cfg["modelVersion"])
 	}
 
 	goplugin.Serve(&goplugin.ServeConfig{
