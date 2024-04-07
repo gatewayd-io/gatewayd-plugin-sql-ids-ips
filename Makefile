@@ -13,3 +13,6 @@ update-all:
 
 build-dev: tidy
 	go build
+
+test:
+	go test -v ./...
