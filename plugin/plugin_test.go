@@ -91,14 +91,16 @@ func Test_OnTrafficFromClinet(t *testing.T) {
 					},
 				}
 				data, _ := json.Marshal(resp)
-				w.Write(data)
+				_, err := w.Write(data)
+				require.NoError(t, err)
 			case fmt.Sprintf(PredictPath, p.ModelName, p.ModelVersion):
 				w.WriteHeader(http.StatusOK)
 				w.Header().Set("Content-Type", "application/json")
 				// This is the output of the deep learning model.
 				resp := map[string][][]float32{"outputs": {{0.999909341}}}
 				data, _ := json.Marshal(resp)
-				w.Write(data)
+				_, err := w.Write(data)
+				require.NoError(t, err)
 			default:
 				w.WriteHeader(http.StatusNotFound)
 			}
@@ -239,7 +241,8 @@ func Test_OnTrafficFromClinetFailedPrediction(t *testing.T) {
 					},
 				}
 				data, _ := json.Marshal(resp)
-				w.Write(data)
+				_, err := w.Write(data)
+				require.NoError(t, err)
 			case predictPath:
 				w.WriteHeader(http.StatusInternalServerError)
 			default:
