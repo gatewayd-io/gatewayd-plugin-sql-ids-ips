@@ -45,3 +45,6 @@ jobs:
           version: "v1.57"
           skip-pkg-cache: true
           install-mode: "goinstall"
+
+      - name: Run tests 🧪
+        run: make test
