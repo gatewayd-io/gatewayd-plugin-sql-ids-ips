@@ -29,7 +29,6 @@ const (
 	ResponseField     string = "response"
 	OutputsField      string = "outputs"
 	TokensField       string = "tokens"
-	RequestField      string = "request"
 	StringField       string = "String"
 
 	DeepLearningModel string = "deep_learning_model"
