@@ -105,12 +105,6 @@ func (p *Plugin) OnTrafficFromClient(ctx context.Context, req *v1.Struct) (*v1.S
 		return req, err
 	}
 
-	// Get the client request from the GatewayD request.
-	request := cast.ToString(sdkPlugin.GetAttr(req, RequestField, ""))
-	if request == "" {
-		return req, nil
-	}
-
 	// Get the query from the request.
 	query := cast.ToString(sdkPlugin.GetAttr(req, QueryField, ""))
 	if query == "" {
