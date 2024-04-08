@@ -102,7 +102,7 @@ func (p *Plugin) OnTrafficFromClient(ctx context.Context, req *v1.Struct) (*v1.S
 	req, err := postgres.HandleClientMessage(req, p.Logger)
 	if err != nil {
 		p.Logger.Debug("Failed to handle client message", ErrorField, err)
-  return req, err
+		return req, err
 	}
 
 	// Get the client request from the GatewayD request.
