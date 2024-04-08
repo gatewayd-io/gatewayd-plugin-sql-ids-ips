@@ -15,3 +15,4 @@
 # vendor/
 
 gatewayd-plugin-sql-ids-ips
+dist/
