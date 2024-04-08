@@ -78,7 +78,6 @@ func Test_OnTrafficFromClinet(t *testing.T) {
 
 	server := httptest.NewServer(
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			fmt.Println(r.URL.Path)
 			switch r.URL.Path {
 			case TokenizeAndSequencePath:
 				w.WriteHeader(http.StatusOK)
@@ -156,7 +155,6 @@ func Test_OnTrafficFromClinetFailedTokenization(t *testing.T) {
 
 	server := httptest.NewServer(
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			fmt.Println(r.URL.Path)
 			switch r.URL.Path {
 			case TokenizeAndSequencePath:
 				w.WriteHeader(http.StatusInternalServerError)
@@ -228,7 +226,6 @@ func Test_OnTrafficFromClinetFailedPrediction(t *testing.T) {
 
 	server := httptest.NewServer(
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			fmt.Println(r.URL.Path)
 			switch r.URL.Path {
 			case TokenizeAndSequencePath:
 				w.WriteHeader(http.StatusOK)
