@@ -32,3 +32,11 @@ Running the above command causes the `go mod tidy` and `go build` to run for com
 ## Sentry
 
 This plugin uses [Sentry](https://sentry.io) for error tracking. Sentry can be configured using the `SENTRY_DSN` environment variable. If `SENTRY_DSN` is not set, Sentry will not be used. -->
+
+## Contributing
+
+We welcome contributions from everyone.<!-- Please read our [contributing guide](https://gatewayd-io.github.io/CONTIBUTING.md) for more details.--> Just open an [issue](https://github.com/gatewayd-io/gatewayd-plugin-sql-ids-ips/issues) or send us a [pull request](https://github.com/gatewayd-io/gatewayd-plugin-sql-ids-ips/pulls).
+
+## License
+
+This plugin is licensed under the [Affero General Public License v3.0](https://github.com/gatewayd-io/gatewayd-plugin-sql-ids-ips/blob/main/LICENSE).

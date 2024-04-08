@@ -29,7 +29,6 @@ const (
 	ResponseField     string = "response"
 	OutputsField      string = "outputs"
 	TokensField       string = "tokens"
-	RequestField      string = "request"
 	StringField       string = "String"
 
 	DeepLearningModel string = "deep_learning_model"
@@ -102,13 +101,7 @@ func (p *Plugin) OnTrafficFromClient(ctx context.Context, req *v1.Struct) (*v1.S
 	req, err := postgres.HandleClientMessage(req, p.Logger)
 	if err != nil {
 		p.Logger.Debug("Failed to handle client message", ErrorField, err)
-  return req, err
-	}
-
-	// Get the client request from the GatewayD request.
-	request := cast.ToString(sdkPlugin.GetAttr(req, RequestField, ""))
-	if request == "" {
-		return req, nil
+		return req, err
 	}
 
 	// Get the query from the request.

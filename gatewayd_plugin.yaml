@@ -8,7 +8,6 @@ reloadOnCrash: True
 timeout: 30s
 
 plugins:
-  # Plugin name
   - name: gatewayd-plugin-sql-ids-ips
     # whether to enable or disable the plugin on the next run
     enabled: True

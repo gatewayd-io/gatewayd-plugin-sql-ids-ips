@@ -47,4 +47,10 @@ jobs:
           install-mode: "goinstall"
 
       - name: Run tests 🧪
-        run: make test
+        run: go test -p 1 -cover -covermode atomic -coverprofile=profile.cov -v ./...
+
+      # Uncomment the following lines to upload the coverage report to Coveralls
+      # - name: Upload coverage report 📈
+      #   uses: shogo82148/actions-goveralls@v1
+      #   with:
+      #     path-to-profile: profile.cov
