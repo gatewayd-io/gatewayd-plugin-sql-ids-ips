@@ -49,12 +49,6 @@ jobs:
       - name: Run tests 🧪
         run: go test -p 1 -cover -covermode atomic -coverprofile=profile.cov -v ./...
 
-      - name: Update coverage report
-        uses: ncruces/go-coverage-report@v0
-        with:
-          report: true
-          coverage-file: profile.cov
-
       # Uncomment the following lines to upload the coverage report to Coveralls
       # - name: Upload coverage report 📈
       #   uses: shogo82148/actions-goveralls@v1
