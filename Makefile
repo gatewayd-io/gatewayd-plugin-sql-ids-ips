@@ -13,7 +13,7 @@ build: tidy
 	@go build -ldflags "-s -w"
 
 checksum:
-	@sha256sum -b gatewayd-plugin-sql-ids-ips
+	@sha256sum -b $(PLUGIN_NAME)
 
 update-all:
 	@go get -u ./...
