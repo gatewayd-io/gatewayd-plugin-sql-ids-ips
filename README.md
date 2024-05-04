@@ -10,6 +10,11 @@
 
 ## Features
 
+- Defense against dark arts:
+  - [MITRE ATT&CK T1190](https://attack.mitre.org/techniques/T1190/)
+  - [OWASP Top 10:2021 A3](https://owasp.org/Top10/A03_2021-Injection/)
+  - [CAPEC-66](https://capec.mitre.org/data/definitions/66.html)
+  - [CWE-89](https://cwe.mitre.org/data/definitions/89.html)
 - Detects SQL injection attacks using two methods:
   - **Signature-based detection**: Detects SQL injection attacks by matching incoming queries against a list of known malicious queries using a trained deep learning model with Tensorflow and Keras
   - **Syntax-based detection**: Detects SQL injection attacks by parsing incoming queries and checking for suspicious syntax using `libinjection`
