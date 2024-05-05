@@ -19,6 +19,7 @@
   - **Signature-based detection**: Detects SQL injection attacks by matching incoming queries against a list of known malicious queries using a trained deep learning model with Tensorflow and Keras
   - **Syntax-based detection**: Detects SQL injection attacks by parsing incoming queries and checking for suspicious syntax using `libinjection`
 - Prevents SQL injection attacks by blocking malicious queries from reaching the database server, and returning an error to the client instead
+- Logs an audit trail for detections containing the query and the prediction score
 - Prometheus metrics for quantifying detections
 - Logging
 - Configurable via environment variables
