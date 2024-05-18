@@ -45,6 +45,21 @@ var (
 			"threshold":                  sdkConfig.GetEnv("THRESHOLD", "0.8"),
 			"enableLibinjection":         sdkConfig.GetEnv("ENABLE_LIBINJECTION", "true"),
 			"libinjectionPermissiveMode": sdkConfig.GetEnv("LIBINJECTION_MODE", "true"),
+
+			// Possible values: error or empty
+			"responseType": sdkConfig.GetEnv("RESPONSE_TYPE", ResponseType),
+
+			// This is part of the error response and the audit trail
+			"errorMessage": sdkConfig.GetEnv("ERROR_MESSAGE", ErrorMessage),
+
+			// Response type: error
+			// Possible severity values: DEBUG, LOG, INFO, NOTICE, WARNING, and EXCEPTION
+			"errorSeverity": sdkConfig.GetEnv("ERROR_SEVERITY", ErrorSeverity),
+			"errorNumber":   sdkConfig.GetEnv("ERROR_NUMBER", ErrorNumber),
+			"errorDetail":   sdkConfig.GetEnv("ERROR_DETAIL", ErrorDetail),
+
+			// Log an audit trail
+			"logLevel": sdkConfig.GetEnv("LOG_LEVEL", LogLevel),
 		},
 		"hooks": []interface{}{
 			// Converting HookName to int32 is required because the plugin

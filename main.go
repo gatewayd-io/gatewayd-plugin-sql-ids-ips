@@ -46,6 +46,13 @@ func main() {
 		pluginInstance.Impl.ServingAPIAddress = cast.ToString(cfg["servingAPIAddress"])
 		pluginInstance.Impl.ModelName = cast.ToString(cfg["modelName"])
 		pluginInstance.Impl.ModelVersion = cast.ToString(cfg["modelVersion"])
+
+		pluginInstance.Impl.ResponseType = cast.ToString(cfg["responseType"])
+		pluginInstance.Impl.ErrorMessage = cast.ToString(cfg["errorMessage"])
+		pluginInstance.Impl.ErrorSeverity = cast.ToString(cfg["errorSeverity"])
+		pluginInstance.Impl.ErrorNumber = cast.ToString(cfg["errorNumber"])
+		pluginInstance.Impl.ErrorDetail = cast.ToString(cfg["errorDetail"])
+		pluginInstance.Impl.LogLevel = cast.ToString(cfg["logLevel"])
 	}
 
 	goplugin.Serve(&goplugin.ServeConfig{

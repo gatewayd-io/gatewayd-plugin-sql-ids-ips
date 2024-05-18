@@ -15,6 +15,7 @@ import (
 	"github.com/hashicorp/go-hclog"
 	goplugin "github.com/hashicorp/go-plugin"
 	"github.com/jackc/pgx/v5/pgproto3"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/spf13/cast"
 	"google.golang.org/grpc"
 )
@@ -30,15 +31,17 @@ const (
 	OutputsField      string = "outputs"
 	TokensField       string = "tokens"
 	StringField       string = "String"
+	ResponseTypeField string = "response_type"
 
 	DeepLearningModel string = "deep_learning_model"
 	Libinjection      string = "libinjection"
 
-	ErrorLevel           string = "error"
-	ExceptionLevel       string = "EXCEPTION"
-	ErrorNumber          string = "42000"
-	DetectionMessage     string = "SQL injection detected"
-	ErrorResponseMessage string = "Back off, you're not welcome here."
+	ResponseType  string = "error"
+	ErrorSeverity string = "EXCEPTION"
+	ErrorNumber   string = "42000"
+	ErrorMessage  string = "SQL injection detected"
+	ErrorDetail   string = "Back off, you're not welcome here."
+	LogLevel      string = "error"
 
 	TokenizeAndSequencePath string = "/tokenize_and_sequence"
 	PredictPath             string = "/v1/models/%s/versions/%s:predict"
@@ -55,6 +58,12 @@ type Plugin struct {
 	ServingAPIAddress          string
 	ModelName                  string
 	ModelVersion               string
+	ResponseType               string
+	ErrorMessage               string
+	ErrorSeverity              string
+	ErrorNumber                string
+	ErrorDetail                string
+	LogLevel                   string
 }
 
 type InjectionDetectionPlugin struct {
@@ -139,7 +148,7 @@ func (p *Plugin) OnTrafficFromClient(ctx context.Context, req *v1.Struct) (*v1.S
 	if err != nil {
 		p.Logger.Error("Failed to make POST request", ErrorField, err)
 		if p.isSQLi(queryString) && !p.LibinjectionPermissiveMode {
-			return p.errorResponse(
+			return p.prepareResponse(
 				req,
 				map[string]any{
 					QueryField:    queryString,
@@ -163,7 +172,7 @@ func (p *Plugin) OnTrafficFromClient(ctx context.Context, req *v1.Struct) (*v1.S
 	if err != nil {
 		p.Logger.Error("Failed to make POST request", ErrorField, err)
 		if p.isSQLi(queryString) && !p.LibinjectionPermissiveMode {
-			return p.errorResponse(
+			return p.prepareResponse(
 				req,
 				map[string]any{
 					QueryField:    queryString,
@@ -189,8 +198,8 @@ func (p *Plugin) OnTrafficFromClient(ctx context.Context, req *v1.Struct) (*v1.S
 		}
 
 		Detections.With(map[string]string{DetectorField: DeepLearningModel}).Inc()
-		p.Logger.Warn(DetectionMessage, ScoreField, score, DetectorField, DeepLearningModel)
-		return p.errorResponse(
+		p.Logger.Warn(p.ErrorMessage, ScoreField, score, DetectorField, DeepLearningModel)
+		return p.prepareResponse(
 			req,
 			map[string]any{
 				QueryField:    queryString,
@@ -200,8 +209,8 @@ func (p *Plugin) OnTrafficFromClient(ctx context.Context, req *v1.Struct) (*v1.S
 		), nil
 	} else if p.EnableLibinjection && injection && !p.LibinjectionPermissiveMode {
 		Detections.With(map[string]string{DetectorField: Libinjection}).Inc()
-		p.Logger.Warn(DetectionMessage, DetectorField, Libinjection)
-		return p.errorResponse(
+		p.Logger.Warn(p.ErrorMessage, DetectorField, Libinjection)
+		return p.prepareResponse(
 			req,
 			map[string]any{
 				QueryField:    queryString,
@@ -224,35 +233,36 @@ func (p *Plugin) isSQLi(query string) bool {
 	// Check if the query is an SQL injection using libinjection.
 	injection, _ := libinjection.IsSQLi(query)
 	if injection {
-		p.Logger.Warn(DetectionMessage, DetectorField, Libinjection)
+		p.Logger.Warn(p.ErrorMessage, DetectorField, Libinjection)
 	}
 	p.Logger.Trace("SQLInjection", IsInjectionField, cast.ToString(injection))
 	return injection
 }
 
-func (p *Plugin) errorResponse(req *v1.Struct, fields map[string]any) *v1.Struct {
-	Preventions.Inc()
+func (p *Plugin) prepareResponse(req *v1.Struct, fields map[string]any) *v1.Struct {
+	Preventions.With(prometheus.Labels{ResponseTypeField: p.ResponseType}).Inc()
 
-	// Create a PostgreSQL error response.
-	errResp := postgres.ErrorResponse(
-		DetectionMessage,
-		ExceptionLevel,
-		ErrorNumber,
-		ErrorResponseMessage,
-	)
+	var encapsulatedResponse []byte
 
-	// Create a ready for query response.
-	readyForQuery := &pgproto3.ReadyForQuery{TxStatus: 'I'}
-	// TODO: Decide whether to terminate the connection.
-	response, err := readyForQuery.Encode(errResp)
-	if err != nil {
-		p.Logger.Error("Failed to encode ready for query response", ErrorField, err)
-		return req
+	if p.ResponseType == "error" {
+		// Create a PostgreSQL error response.
+		encapsulatedResponse = postgres.ErrorResponse(
+			p.ErrorMessage,
+			p.ErrorSeverity,
+			ErrorNumber,
+			ErrorDetail,
+		)
+	} else {
+		// Create a PostgreSQL empty query response.
+		encapsulatedResponse, _ = (&pgproto3.EmptyQueryResponse{}).Encode(nil)
 	}
+
+	// Create and encode a ready for query response.
+	response, _ := (&pgproto3.ReadyForQuery{TxStatus: 'I'}).Encode(encapsulatedResponse)
 
 	signals, err := v1.NewList([]any{
 		sdkAct.Terminate().ToMap(),
-		sdkAct.Log(ErrorLevel, DetectionMessage, fields).ToMap(),
+		sdkAct.Log(p.LogLevel, p.ErrorMessage, fields).ToMap(),
 	})
 	if err != nil {
 		p.Logger.Error("Failed to create signals", ErrorField, err)

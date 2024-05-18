@@ -52,7 +52,7 @@ func Test_errorResponse(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotNil(t, reqJSON)
 
-	resp := p.errorResponse(
+	resp := p.prepareResponse(
 		reqJSON,
 		map[string]any{
 			"score":    0.9999,

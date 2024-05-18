@@ -47,5 +47,17 @@ plugins:
       # False (strict): The plugin will block the request if it detects an SQL injection attack.
       #                 This greatly increases the false positive rate.
       - LIBINJECTION_PERMISSIVE_MODE=True
+      # The following env-vars are used to configure the plugin's response.
+      # Possiblel values: error, empty or terminate
+      - RESPONSE_TYPE=error
+      # Possible values: DEBUG, LOG, INFO, NOTICE, WARNING, and EXCEPTION
+      - ERROR_SEVERITY=EXCEPTION
+      # Ref: https://www.postgresql.org/docs/current/errcodes-appendix.html
+      - ERROR_NUMBER=42000
+      - ERROR_MESSAGE=SQL injection detected
+      - ERROR_DETAIL=Back off, you're not welcome here.
+      # Possible values: trace, debug, info, warn, error
+      # Other values will result in no level being set.
+      - LOG_LEVEL=error
     # Checksum hash to verify the binary before loading
     checksum: dee4aa014a722e1865d91744a4fd310772152467d9c6ab4ba17fd9dd40d3f724
