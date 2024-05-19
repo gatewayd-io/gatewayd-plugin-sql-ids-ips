@@ -1,0 +1,29 @@
+title: SQL injection detected
+description: Detects SQL injection attacks detected by the IDS/IPS plugin
+references:
+  - http://www.sqlinjection.net/
+  - https://attack.mitre.org/techniques/T1190/
+  - https://owasp.org/Top10/A03_2021-Injection/
+  - https://capec.mitre.org/data/definitions/66.html
+  - https://cwe.mitre.org/data/definitions/89.html
+author: Mostafa Moradian <mostafa@gatewayd.io>
+date: 2024/05/19
+tags:
+  - attack.initial_access
+  - attack.t1190
+  - owasp.a03
+  - capec.66
+  - cwe.89
+logsource:
+  product: gatewayd
+  service: gatewayd-plugin-sql-ids-ips
+detection:
+  selection:
+    detector: deep_learning_model
+    score|gte: 0.8
+  keywords:
+    - "SQL injection detected"
+  condition: selection and keywords
+falsepositives:
+  - Certain queries like accessing database schema may trigger this alert
+level: high

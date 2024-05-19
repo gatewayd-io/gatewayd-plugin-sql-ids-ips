@@ -20,6 +20,7 @@
   - **Syntax-based detection**: Detects SQL injection attacks by parsing incoming queries and checking for suspicious syntax using `libinjection`
 - Prevents SQL injection attacks by blocking malicious queries from reaching the database server, and returning an error to the client instead
 - Logs an audit trail for detections containing the query and the prediction score
+- Sigma rule for detection in SIEM systems
 - Prometheus metrics for quantifying detections
 - Logging
 - Configurable via environment variables
