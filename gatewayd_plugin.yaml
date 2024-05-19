@@ -59,5 +59,6 @@ plugins:
       # Possible values: trace, debug, info, warn, error
       # Other values will result in no level being set.
       - LOG_LEVEL=error
+      - SENTRY_DSN=https://379ef59ea0c55742957b06c94bc496e1@o4504550475038720.ingest.us.sentry.io/4507282732810240
     # Checksum hash to verify the binary before loading
     checksum: dee4aa014a722e1865d91744a4fd310772152467d9c6ab4ba17fd9dd40d3f724
