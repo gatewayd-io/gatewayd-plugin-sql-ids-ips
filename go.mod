@@ -6,6 +6,7 @@ require (
 	github.com/carlmjohnson/requests v0.23.5
 	github.com/corazawaf/libinjection-go v0.1.3
 	github.com/gatewayd-io/gatewayd-plugin-sdk v0.2.13
+	github.com/getsentry/sentry-go v0.27.0
 	github.com/hashicorp/go-hclog v1.6.3
 	github.com/hashicorp/go-plugin v1.6.1
 	github.com/jackc/pgx/v5 v5.5.5
