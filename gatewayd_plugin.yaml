@@ -37,9 +37,6 @@ plugins:
       # Anything below 0.8 is not recommended,
       # but it is dependent on the application and testing.
       - THRESHOLD=0.8
-      # The following env-vars disable the verbose logging of Tensorflow.
-      - KMP_AFFINITY=noverbose
-      - TF_CPP_MIN_LOG_LEVEL=3
       - ENABLE_LIBINJECTION=True
       # True (permissive): The plugin will block the request only if it detects an SQL injection
       #                    attack and the prediction confidence is above the threshold. This is
