@@ -48,9 +48,9 @@ plugins:
       #                 This greatly increases the false positive rate.
       - LIBINJECTION_PERMISSIVE_MODE=True
       # The following env-vars are used to configure the plugin's response.
-      # Possiblel values: error, empty or terminate
+      # Possible values: error or empty
       - RESPONSE_TYPE=error
-      # Possible values: DEBUG, LOG, INFO, NOTICE, WARNING, and EXCEPTION
+      # Possible values: DEBUG, LOG, INFO, NOTICE, WARNING or EXCEPTION
       - ERROR_SEVERITY=EXCEPTION
       # Ref: https://www.postgresql.org/docs/current/errcodes-appendix.html
       - ERROR_NUMBER=42000
