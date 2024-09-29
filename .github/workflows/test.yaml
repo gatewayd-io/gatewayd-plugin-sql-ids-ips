@@ -37,14 +37,10 @@ jobs:
       - name: Install Go 🧑‍💻
         uses: actions/setup-go@v5
         with:
-          go-version: "1.22"
+          go-version: "1.23"
 
       - name: Lint code issues 🚨
-        uses: golangci/golangci-lint-action@v4
-        with:
-          version: "v1.57"
-          skip-pkg-cache: true
-          install-mode: "goinstall"
+        uses: golangci/golangci-lint-action@v3
 
       - name: Run tests 🧪
         run: go test -p 1 -cover -covermode atomic -coverprofile=profile.cov -v ./...
