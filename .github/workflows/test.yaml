@@ -40,7 +40,7 @@ jobs:
           go-version: "1.23"
 
       - name: Lint code issues 🚨
-        uses: golangci/golangci-lint-action@v3
+        uses: golangci/golangci-lint-action@v6
 
       - name: Run tests 🧪
         run: go test -p 1 -cover -covermode atomic -coverprofile=profile.cov -v ./...
