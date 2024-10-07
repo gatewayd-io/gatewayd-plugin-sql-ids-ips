@@ -7,7 +7,7 @@ references:
   - https://capec.mitre.org/data/definitions/66.html
   - https://cwe.mitre.org/data/definitions/89.html
 author: Mostafa Moradian <mostafa@gatewayd.io>
-date: 2024/05/19
+date: 2024-05-19
 tags:
   - attack.initial_access
   - attack.t1190
