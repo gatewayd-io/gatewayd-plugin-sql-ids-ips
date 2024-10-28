@@ -10,7 +10,8 @@
 
 <p align="center">
     <a href="https://github.com/gatewayd-io/gatewayd-plugin-sql-ids-ips/releases">Download</a> ·
-    <a href="https://docs.gatewayd.io/plugins/gatewayd-plugin-sql-ids-ips">Documentation</a>
+    <a href="https://docs.gatewayd.io/plugins/gatewayd-plugin-sql-ids-ips">Documentation</a> ·
+    <a href="https://github.com/gatewayd-io/DeepSQLi">DeepSQLi</a>
 </p>
 
 ## Features
