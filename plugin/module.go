@@ -36,12 +36,8 @@ var (
 			"metricsUnixDomainSocket": sdkConfig.GetEnv(
 				"METRICS_UNIX_DOMAIN_SOCKET", "/tmp/gatewayd-plugin-sql-ids-ips.sock"),
 			"metricsEndpoint": sdkConfig.GetEnv("METRICS_ENDPOINT", "/metrics"),
-			"tokenizerAPIAddress": sdkConfig.GetEnv(
-				"TOKENIZER_API_ADDRESS", "http://localhost:8000"),
-			"servingAPIAddress": sdkConfig.GetEnv(
-				"SERVING_API_ADDRESS", "http://localhost:8501"),
-			"modelName":                  sdkConfig.GetEnv("MODEL_NAME", "sqli_model"),
-			"modelVersion":               sdkConfig.GetEnv("MODEL_VERSION", "1"),
+			"predictionAPIAddress": sdkConfig.GetEnv(
+				"PREDICTION_API_ADDRESS", "http://localhost:8000"),
 			"threshold":                  sdkConfig.GetEnv("THRESHOLD", "0.8"),
 			"enableLibinjection":         sdkConfig.GetEnv("ENABLE_LIBINJECTION", "true"),
 			"libinjectionPermissiveMode": sdkConfig.GetEnv("LIBINJECTION_MODE", "true"),

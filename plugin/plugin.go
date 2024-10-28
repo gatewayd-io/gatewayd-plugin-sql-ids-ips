@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
 
 	"github.com/carlmjohnson/requests"
 	"github.com/corazawaf/libinjection-go"
@@ -28,10 +27,7 @@ type Plugin struct {
 	Threshold                  float32
 	EnableLibinjection         bool
 	LibinjectionPermissiveMode bool
-	TokenizerAPIAddress        string
-	ServingAPIAddress          string
-	ModelName                  string
-	ModelVersion               string
+	PredictionAPIAddress       string
 	ResponseType               string
 	ErrorMessage               string
 	ErrorSeverity              string
@@ -111,14 +107,14 @@ func (p *Plugin) OnTrafficFromClient(ctx context.Context, req *v1.Struct) (*v1.S
 	}
 	queryString := cast.ToString(queryMap[StringField])
 
-	var tokens map[string]any
+	var output map[string]any
 	err = requests.
-		URL(p.TokenizerAPIAddress).
-		Path(TokenizeAndSequencePath).
+		URL(p.PredictionAPIAddress).
+		Path(PredictPath).
 		BodyJSON(map[string]any{
 			QueryField: queryString,
 		}).
-		ToJSON(&tokens).
+		ToJSON(&output).
 		Fetch(context.Background())
 	if err != nil {
 		p.Logger.Error("Failed to make POST request", ErrorField, err)
@@ -135,51 +131,25 @@ func (p *Plugin) OnTrafficFromClient(ctx context.Context, req *v1.Struct) (*v1.S
 		return req, nil
 	}
 
-	var output map[string]any
-	err = requests.
-		URL(p.ServingAPIAddress).
-		Path(fmt.Sprintf(PredictPath, p.ModelName, p.ModelVersion)).
-		BodyJSON(map[string]any{
-			"inputs": []any{cast.ToSlice(tokens[TokensField])},
-		}).
-		ToJSON(&output).
-		Fetch(context.Background())
-	if err != nil {
-		p.Logger.Error("Failed to make POST request", ErrorField, err)
-		if p.isSQLi(queryString) && !p.LibinjectionPermissiveMode {
-			return p.prepareResponse(
-				req,
-				map[string]any{
-					QueryField:    queryString,
-					DetectorField: Libinjection,
-					ErrorField:    "Failed to make POST request to serving API",
-				},
-			), nil
-		}
-		return req, nil
-	}
-
-	predictions := cast.ToSlice(output[OutputsField])
-	scores := cast.ToSlice(predictions[0])
-	score := cast.ToFloat32(scores[0])
-	p.Logger.Trace("Deep learning model prediction", ScoreField, score)
+	confidence := cast.ToFloat32(output[ConfidenceField])
+	p.Logger.Trace("Deep learning model prediction", ConfidenceField, confidence)
 
 	// Check the prediction against the threshold,
 	// otherwise check if the query is an SQL injection using libinjection.
 	injection := p.isSQLi(queryString)
-	if score >= p.Threshold {
+	if confidence >= p.Threshold {
 		if p.EnableLibinjection && !injection {
 			p.Logger.Debug("False positive detected", DetectorField, Libinjection)
 		}
 
 		Detections.With(map[string]string{DetectorField: DeepLearningModel}).Inc()
-		p.Logger.Warn(p.ErrorMessage, ScoreField, score, DetectorField, DeepLearningModel)
+		p.Logger.Warn(p.ErrorMessage, ConfidenceField, confidence, DetectorField, DeepLearningModel)
 		return p.prepareResponse(
 			req,
 			map[string]any{
-				QueryField:    queryString,
-				ScoreField:    score,
-				DetectorField: DeepLearningModel,
+				QueryField:      queryString,
+				ConfidenceField: confidence,
+				DetectorField:   DeepLearningModel,
 			},
 		), nil
 	} else if p.EnableLibinjection && injection && !p.LibinjectionPermissiveMode {

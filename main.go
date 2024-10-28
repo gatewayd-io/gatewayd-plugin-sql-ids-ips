@@ -54,10 +54,7 @@ func main() {
 		pluginInstance.Impl.EnableLibinjection = cast.ToBool(cfg["enableLibinjection"])
 		pluginInstance.Impl.LibinjectionPermissiveMode = cast.ToBool(
 			cfg["libinjectionPermissiveMode"])
-		pluginInstance.Impl.TokenizerAPIAddress = cast.ToString(cfg["tokenizerAPIAddress"])
-		pluginInstance.Impl.ServingAPIAddress = cast.ToString(cfg["servingAPIAddress"])
-		pluginInstance.Impl.ModelName = cast.ToString(cfg["modelName"])
-		pluginInstance.Impl.ModelVersion = cast.ToString(cfg["modelVersion"])
+		pluginInstance.Impl.PredictionAPIAddress = cast.ToString(cfg["predictionAPIAddress"])
 
 		pluginInstance.Impl.ResponseType = cast.ToString(cfg["responseType"])
 		pluginInstance.Impl.ErrorMessage = cast.ToString(cfg["errorMessage"])

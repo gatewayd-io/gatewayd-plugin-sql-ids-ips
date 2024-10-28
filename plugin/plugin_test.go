@@ -3,7 +3,6 @@ package plugin
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -71,28 +70,13 @@ func Test_errorResponse(t *testing.T) {
 
 func Test_OnTrafficFromClinet(t *testing.T) {
 	p := &Plugin{
-		Logger:       hclog.NewNullLogger(),
-		ModelName:    "sqli_model",
-		ModelVersion: "2",
+		Logger: hclog.NewNullLogger(),
 	}
 
 	server := httptest.NewServer(
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			switch r.URL.Path {
-			case TokenizeAndSequencePath:
-				w.WriteHeader(http.StatusOK)
-				w.Header().Set("Content-Type", "application/json")
-				// This is the tokenized query:
-				// {"query":"select * from users where id = 1 or 1=1"}
-				resp := map[string][]float32{
-					"tokens": {
-						0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 6, 5, 73, 7, 68, 4, 11, 12,
-					},
-				}
-				data, _ := json.Marshal(resp)
-				_, err := w.Write(data)
-				require.NoError(t, err)
-			case fmt.Sprintf(PredictPath, p.ModelName, p.ModelVersion):
+			case PredictPath:
 				w.WriteHeader(http.StatusOK)
 				w.Header().Set("Content-Type", "application/json")
 				// This is the output of the deep learning model.
@@ -107,8 +91,7 @@ func Test_OnTrafficFromClinet(t *testing.T) {
 	)
 	defer server.Close()
 
-	p.TokenizerAPIAddress = server.URL
-	p.ServingAPIAddress = server.URL
+	p.PredictionAPIAddress = server.URL
 
 	query := pgproto3.Query{String: "SELECT * FROM users WHERE id = 1 OR 1=1"}
 	queryBytes, err := query.Encode(nil)
@@ -136,17 +119,13 @@ func Test_OnTrafficFromClinet(t *testing.T) {
 func Test_OnTrafficFromClinetFailedTokenization(t *testing.T) {
 	plugins := []*Plugin{
 		{
-			Logger:       hclog.NewNullLogger(),
-			ModelName:    "sqli_model",
-			ModelVersion: "2",
+			Logger: hclog.NewNullLogger(),
 			// If libinjection is enabled, the response should contain the "response" field,
 			// and the "signals" field, which means the plugin will terminate the request.
 			EnableLibinjection: true,
 		},
 		{
-			Logger:       hclog.NewNullLogger(),
-			ModelName:    "sqli_model",
-			ModelVersion: "2",
+			Logger: hclog.NewNullLogger(),
 			// If libinjection is disabled, the response should not contain the "response" field,
 			// and the "signals" field, which means the plugin will not terminate the request.
 			EnableLibinjection: false,
@@ -156,7 +135,7 @@ func Test_OnTrafficFromClinetFailedTokenization(t *testing.T) {
 	server := httptest.NewServer(
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			switch r.URL.Path {
-			case TokenizeAndSequencePath:
+			case PredictPath:
 				w.WriteHeader(http.StatusInternalServerError)
 			default:
 				w.WriteHeader(http.StatusNotFound)
@@ -166,8 +145,7 @@ func Test_OnTrafficFromClinetFailedTokenization(t *testing.T) {
 	defer server.Close()
 
 	for i := range plugins {
-		plugins[i].TokenizerAPIAddress = server.URL
-		plugins[i].ServingAPIAddress = server.URL
+		plugins[i].PredictionAPIAddress = server.URL
 
 		query := pgproto3.Query{String: "SELECT * FROM users WHERE id = 1 OR 1=1"}
 		queryBytes, err := query.Encode(nil)
@@ -204,43 +182,22 @@ func Test_OnTrafficFromClinetFailedTokenization(t *testing.T) {
 func Test_OnTrafficFromClinetFailedPrediction(t *testing.T) {
 	plugins := []*Plugin{
 		{
-			Logger:       hclog.NewNullLogger(),
-			ModelName:    "sqli_model",
-			ModelVersion: "2",
+			Logger: hclog.NewNullLogger(),
 			// If libinjection is disabled, the response should not contain the "response" field,
 			// and the "signals" field, which means the plugin will not terminate the request.
 			EnableLibinjection: false,
 		},
 		{
-			Logger:       hclog.NewNullLogger(),
-			ModelName:    "sqli_model",
-			ModelVersion: "2",
+			Logger: hclog.NewNullLogger(),
 			// If libinjection is enabled, the response should contain the "response" field,
 			// and the "signals" field, which means the plugin will terminate the request.
 			EnableLibinjection: true,
 		},
 	}
-
-	// This is the same for both plugins.
-	predictPath := fmt.Sprintf(PredictPath, plugins[0].ModelName, plugins[1].ModelVersion)
-
 	server := httptest.NewServer(
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			switch r.URL.Path {
-			case TokenizeAndSequencePath:
-				w.WriteHeader(http.StatusOK)
-				w.Header().Set("Content-Type", "application/json")
-				// This is the tokenized query:
-				// {"query":"select * from users where id = 1 or 1=1"}
-				resp := map[string][]float32{
-					"tokens": {
-						0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 6, 5, 73, 7, 68, 4, 11, 12,
-					},
-				}
-				data, _ := json.Marshal(resp)
-				_, err := w.Write(data)
-				require.NoError(t, err)
-			case predictPath:
+			case PredictPath:
 				w.WriteHeader(http.StatusInternalServerError)
 			default:
 				w.WriteHeader(http.StatusNotFound)
@@ -250,8 +207,7 @@ func Test_OnTrafficFromClinetFailedPrediction(t *testing.T) {
 	defer server.Close()
 
 	for i := range plugins {
-		plugins[i].TokenizerAPIAddress = server.URL
-		plugins[i].ServingAPIAddress = server.URL
+		plugins[i].PredictionAPIAddress = server.URL
 
 		query := pgproto3.Query{String: "SELECT * FROM users WHERE id = 1 OR 1=1"}
 		queryBytes, err := query.Encode(nil)

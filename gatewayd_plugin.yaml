@@ -27,10 +27,7 @@ plugins:
       - METRICS_ENABLED=True
       - METRICS_UNIX_DOMAIN_SOCKET=/tmp/gatewayd-plugin-sql-ids-ips.sock
       - METRICS_PATH=/metrics
-      - TOKENIZER_API_ADDRESS=http://localhost:8000
-      - SERVING_API_ADDRESS=http://localhost:8501
-      - MODEL_NAME=sqli_model
-      - MODEL_VERSION=3
+      - PREDICTION_API_ADDRESS=http://localhost:8000
       # Threshold determine the minimum prediction confidence
       # required to detect an SQL injection attack. Any value
       # between 0 and 1 is valid, and it is inclusive.

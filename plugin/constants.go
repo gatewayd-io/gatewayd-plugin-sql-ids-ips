@@ -3,12 +3,11 @@ package plugin
 const (
 	DecodedQueryField string = "decodedQuery"
 	DetectorField     string = "detector"
-	ScoreField        string = "score"
 	QueryField        string = "query"
 	ErrorField        string = "error"
 	IsInjectionField  string = "is_injection"
 	ResponseField     string = "response"
-	OutputsField      string = "outputs"
+	ConfidenceField   string = "confidence"
 	TokensField       string = "tokens"
 	StringField       string = "String"
 	ResponseTypeField string = "response_type"
@@ -23,6 +22,5 @@ const (
 	ErrorDetail   string = "Back off, you're not welcome here."
 	LogLevel      string = "error"
 
-	TokenizeAndSequencePath string = "/tokenize_and_sequence"
-	PredictPath             string = "/v1/models/%s/versions/%s:predict"
+	PredictPath string = "/predict"
 )
