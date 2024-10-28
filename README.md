@@ -8,6 +8,11 @@
   <p align="center">GatewayD plugin for SQL injection detection and prevention.</p>
 </p>
 
+<p align="center">
+    <a href="https://github.com/gatewayd-io/gatewayd-plugin-sql-ids-ips/releases">Download</a> ·
+    <a href="https://docs.gatewayd.io/plugins/gatewayd-plugin-sql-ids-ips">Documentation</a>
+</p>
+
 ## Features
 
 - Defense against dark arts:
