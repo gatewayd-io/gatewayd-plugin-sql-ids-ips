@@ -1,6 +1,6 @@
 module github.com/gatewayd-io/gatewayd-plugin-sql-ids-ips
 
-go 1.23.1
+go 1.23.3
 
 require (
 	github.com/carlmjohnson/requests v0.24.2
