@@ -6,12 +6,12 @@ require (
 	github.com/carlmjohnson/requests v0.24.3
 	github.com/corazawaf/libinjection-go v0.2.2
 	github.com/gatewayd-io/gatewayd-plugin-sdk v0.4.3
-	github.com/getsentry/sentry-go v0.33.0
+	github.com/getsentry/sentry-go v0.35.0
 	github.com/hashicorp/go-hclog v1.6.3
 	github.com/hashicorp/go-plugin v1.6.3
 	github.com/jackc/pgx/v5 v5.7.5
 	github.com/prometheus/client_golang v1.23.0
-	github.com/spf13/cast v1.8.0
+	github.com/spf13/cast v1.9.2
 	github.com/stretchr/testify v1.10.0
 	google.golang.org/grpc v1.74.2
 )
