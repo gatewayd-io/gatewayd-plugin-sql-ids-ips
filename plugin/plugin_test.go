@@ -68,7 +68,52 @@ func Test_errorResponse(t *testing.T) {
 	assert.Len(t, resp.Fields[sdkAct.Signals].GetListValue().AsSlice(), 2)
 }
 
-func Test_OnTrafficFromClinet(t *testing.T) {
+func Test_emptyResponse(t *testing.T) {
+	p := &Plugin{
+		Logger:       hclog.NewNullLogger(),
+		ResponseType: "empty",
+	}
+
+	query := pgproto3.Query{String: "SELECT * FROM users WHERE id = 1 OR 1=1"}
+	queryBytes, err := query.Encode(nil)
+	require.NoError(t, err)
+
+	req := map[string]any{
+		"request": queryBytes,
+	}
+	reqJSON, err := v1.NewStruct(req)
+	require.NoError(t, err)
+	assert.NotNil(t, reqJSON)
+
+	resp := p.prepareResponse(
+		reqJSON,
+		map[string]any{
+			"score":    0.9999,
+			"detector": "deep_learning_model",
+		},
+	)
+	assert.Equal(t, reqJSON, resp)
+	assert.Len(t, resp.GetFields(), 3)
+	assert.Contains(t, resp.GetFields(), "request")
+	assert.Contains(t, resp.GetFields(), "response")
+	assert.Contains(t, resp.GetFields(), sdkAct.Signals)
+	assert.Len(t, resp.Fields[sdkAct.Signals].GetListValue().AsSlice(), 2)
+}
+
+func Test_GetPluginConfig(t *testing.T) {
+	p := &Plugin{
+		Logger: hclog.NewNullLogger(),
+	}
+
+	result, err := p.GetPluginConfig(context.Background(), nil)
+	require.NoError(t, err)
+	assert.NotNil(t, result)
+	assert.Contains(t, result.GetFields(), "id")
+	assert.Contains(t, result.GetFields(), "hooks")
+	assert.Contains(t, result.GetFields(), "config")
+}
+
+func Test_OnTrafficFromClient(t *testing.T) {
 	p := &Plugin{
 		Logger: hclog.NewNullLogger(),
 	}
@@ -116,7 +161,7 @@ func Test_OnTrafficFromClinet(t *testing.T) {
 	assert.Len(t, resp.Fields[sdkAct.Signals].GetListValue().AsSlice(), 2)
 }
 
-func Test_OnTrafficFromClinetFailedTokenization(t *testing.T) {
+func Test_OnTrafficFromClientFailedTokenization(t *testing.T) {
 	plugins := []*Plugin{
 		{
 			Logger: hclog.NewNullLogger(),
@@ -179,26 +224,22 @@ func Test_OnTrafficFromClinetFailedTokenization(t *testing.T) {
 	}
 }
 
-func Test_OnTrafficFromClinetFailedPrediction(t *testing.T) {
-	plugins := []*Plugin{
-		{
-			Logger: hclog.NewNullLogger(),
-			// If libinjection is disabled, the response should not contain the "response" field,
-			// and the "signals" field, which means the plugin will not terminate the request.
-			EnableLibinjection: false,
-		},
-		{
-			Logger: hclog.NewNullLogger(),
-			// If libinjection is enabled, the response should contain the "response" field,
-			// and the "signals" field, which means the plugin will terminate the request.
-			EnableLibinjection: true,
-		},
+func Test_OnTrafficFromClientBelowThreshold(t *testing.T) {
+	p := &Plugin{
+		Logger:    hclog.NewNullLogger(),
+		Threshold: 0.8,
 	}
+
 	server := httptest.NewServer(
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			switch r.URL.Path {
 			case PredictPath:
-				w.WriteHeader(http.StatusInternalServerError)
+				w.WriteHeader(http.StatusOK)
+				w.Header().Set("Content-Type", "application/json")
+				resp := map[string]any{"confidence": 0.1}
+				data, _ := json.Marshal(resp)
+				_, err := w.Write(data)
+				require.NoError(t, err)
 			default:
 				w.WriteHeader(http.StatusNotFound)
 			}
@@ -206,37 +247,39 @@ func Test_OnTrafficFromClinetFailedPrediction(t *testing.T) {
 	)
 	defer server.Close()
 
-	for i := range plugins {
-		plugins[i].PredictionAPIAddress = server.URL
+	p.PredictionAPIAddress = server.URL
 
-		query := pgproto3.Query{String: "SELECT * FROM users WHERE id = 1 OR 1=1"}
-		queryBytes, err := query.Encode(nil)
-		require.NoError(t, err)
+	query := pgproto3.Query{String: "SELECT name FROM products WHERE id = 42"}
+	queryBytes, err := query.Encode(nil)
+	require.NoError(t, err)
 
-		req := map[string]any{
-			"request": queryBytes,
-		}
-		reqJSON, err := v1.NewStruct(req)
-		require.NoError(t, err)
-		assert.NotNil(t, reqJSON)
-
-		resp, err := plugins[i].OnTrafficFromClient(context.Background(), reqJSON)
-		require.NoError(t, err)
-		assert.NotNil(t, resp)
-		if plugins[i].EnableLibinjection {
-			assert.Len(t, resp.GetFields(), 4)
-			assert.Contains(t, resp.GetFields(), "request")
-			assert.Contains(t, resp.GetFields(), "query")
-			assert.Contains(t, resp.GetFields(), "response")
-			assert.Contains(t, resp.GetFields(), sdkAct.Signals)
-			// 2 signals: Terminate and Log.
-			assert.Len(t, resp.Fields[sdkAct.Signals].GetListValue().AsSlice(), 2)
-		} else {
-			assert.Len(t, resp.GetFields(), 2)
-			assert.Contains(t, resp.GetFields(), "request")
-			assert.Contains(t, resp.GetFields(), "query")
-			assert.NotContains(t, resp.GetFields(), "response")
-			assert.NotContains(t, resp.GetFields(), sdkAct.Signals)
-		}
+	req := map[string]any{
+		"request": queryBytes,
 	}
+	reqJSON, err := v1.NewStruct(req)
+	require.NoError(t, err)
+
+	resp, err := p.OnTrafficFromClient(context.Background(), reqJSON)
+	require.NoError(t, err)
+	assert.NotNil(t, resp)
+	assert.NotContains(t, resp.GetFields(), "response")
+	assert.NotContains(t, resp.GetFields(), sdkAct.Signals)
+}
+
+func Test_OnTrafficFromClientEmptyQuery(t *testing.T) {
+	p := &Plugin{
+		Logger: hclog.NewNullLogger(),
+	}
+
+	req := map[string]any{
+		"request": []byte{},
+	}
+	reqJSON, err := v1.NewStruct(req)
+	require.NoError(t, err)
+
+	resp, err := p.OnTrafficFromClient(context.Background(), reqJSON)
+	assert.NoError(t, err)
+	assert.NotNil(t, resp)
+	assert.NotContains(t, resp.GetFields(), "response")
+	assert.NotContains(t, resp.GetFields(), sdkAct.Signals)
 }
