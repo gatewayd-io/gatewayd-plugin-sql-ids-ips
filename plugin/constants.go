@@ -1,6 +1,10 @@
 package plugin
 
+import "time"
+
 const (
+	DefaultPredictionTimeout time.Duration = 10 * time.Second
+
 	DecodedQueryField string = "decodedQuery"
 	DetectorField     string = "detector"
 	QueryField        string = "query"

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"time"
 
 	"github.com/carlmjohnson/requests"
 	"github.com/corazawaf/libinjection-go"
@@ -34,6 +35,7 @@ type Plugin struct {
 	ErrorNumber                string
 	ErrorDetail                string
 	LogLevel                   string
+	PredictionTimeout          time.Duration
 }
 
 type InjectionDetectionPlugin struct {
@@ -107,6 +109,13 @@ func (p *Plugin) OnTrafficFromClient(ctx context.Context, req *v1.Struct) (*v1.S
 	}
 	queryString := cast.ToString(queryMap[StringField])
 
+	timeout := p.PredictionTimeout
+	if timeout == 0 {
+		timeout = DefaultPredictionTimeout
+	}
+	reqCtx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
 	var output map[string]any
 	err = requests.
 		URL(p.PredictionAPIAddress).
@@ -115,7 +124,7 @@ func (p *Plugin) OnTrafficFromClient(ctx context.Context, req *v1.Struct) (*v1.S
 			QueryField: queryString,
 		}).
 		ToJSON(&output).
-		Fetch(context.Background())
+		Fetch(reqCtx)
 	if err != nil {
 		p.Logger.Error("Failed to make POST request", ErrorField, err)
 		if p.isSQLi(queryString) && !p.LibinjectionPermissiveMode {
@@ -194,16 +203,24 @@ func (p *Plugin) prepareResponse(req *v1.Struct, fields map[string]any) *v1.Stru
 		encapsulatedResponse = postgres.ErrorResponse(
 			p.ErrorMessage,
 			p.ErrorSeverity,
-			ErrorNumber,
-			ErrorDetail,
+			p.ErrorNumber,
+			p.ErrorDetail,
 		)
 	} else {
 		// Create a PostgreSQL empty query response.
-		encapsulatedResponse, _ = (&pgproto3.EmptyQueryResponse{}).Encode(nil)
+		var encErr error
+		encapsulatedResponse, encErr = (&pgproto3.EmptyQueryResponse{}).Encode(nil)
+		if encErr != nil {
+			p.Logger.Error("Failed to encode empty query response", ErrorField, encErr)
+			return req
+		}
 	}
 
-	// Create and encode a ready for query response.
-	response, _ := (&pgproto3.ReadyForQuery{TxStatus: 'I'}).Encode(encapsulatedResponse)
+	response, encErr := (&pgproto3.ReadyForQuery{TxStatus: 'I'}).Encode(encapsulatedResponse)
+	if encErr != nil {
+		p.Logger.Error("Failed to encode ready for query response", ErrorField, encErr)
+		return req
+	}
 
 	signals, err := v1.NewList([]any{
 		sdkAct.Terminate().ToMap(),
