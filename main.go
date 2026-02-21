@@ -4,6 +4,7 @@ import (
 	"flag"
 	"log"
 	"os"
+	"time"
 
 	sdkConfig "github.com/gatewayd-io/gatewayd-plugin-sdk/config"
 	"github.com/gatewayd-io/gatewayd-plugin-sdk/logging"
@@ -62,6 +63,8 @@ func main() {
 		pluginInstance.Impl.ErrorNumber = cast.ToString(cfg["errorNumber"])
 		pluginInstance.Impl.ErrorDetail = cast.ToString(cfg["errorDetail"])
 		pluginInstance.Impl.LogLevel = cast.ToString(cfg["logLevel"])
+		pluginInstance.Impl.PredictionTimeout = time.Duration(
+			cast.ToInt(cfg["predictionTimeout"])) * time.Second
 	}
 
 	goplugin.Serve(&goplugin.ServeConfig{
